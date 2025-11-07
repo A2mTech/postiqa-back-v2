@@ -36,6 +36,7 @@ public class ActorRegistryInitializer {
         // Register platform-specific actors
         registerLinkedInActors();
         registerTikTokActors();
+        registerInstagramActors();
 
         // Register other platforms with generic builders
         registerGenericActors();
@@ -101,9 +102,37 @@ public class ActorRegistryInitializer {
         }
     }
 
+    private void registerInstagramActors() {
+        String actorId = apifyProperties.getActorId(SocialPlatform.INSTAGRAM);
+        if (actorId != null && !actorId.isEmpty()) {
+            // Instagram Posts Actor
+            actorRegistry.registerActor(ActorConfig.builder()
+                .actorId(actorId)
+                .platform(SocialPlatform.INSTAGRAM)
+                .type(ActorConfig.ActorType.SOCIAL_POSTS)
+                .supportsSync(true) // Very fast: 100-200 posts/sec
+                .defaultTimeout(Duration.ofMinutes(5))
+                .inputBuilderClass("fr.postiqa.core.infrastructure.client.actor.impl.InstagramActorInputBuilder")
+                .outputParserClass("fr.postiqa.core.infrastructure.client.actor.impl.InstagramActorOutputParser")
+                .build()
+            );
+
+            // Instagram Profile Actor
+            actorRegistry.registerActor(ActorConfig.builder()
+                .actorId(actorId)
+                .platform(SocialPlatform.INSTAGRAM)
+                .type(ActorConfig.ActorType.SOCIAL_PROFILE)
+                .supportsSync(true) // Profile extraction from posts
+                .defaultTimeout(Duration.ofMinutes(3))
+                .inputBuilderClass("fr.postiqa.core.infrastructure.client.actor.impl.InstagramActorInputBuilder")
+                .outputParserClass("fr.postiqa.core.infrastructure.client.actor.impl.InstagramActorOutputParser")
+                .build()
+            );
+        }
+    }
+
     private void registerGenericActors() {
         registerGenericActorForPlatform(SocialPlatform.TWITTER);
-        registerGenericActorForPlatform(SocialPlatform.INSTAGRAM);
         registerGenericActorForPlatform(SocialPlatform.YOUTUBE);
     }
 
