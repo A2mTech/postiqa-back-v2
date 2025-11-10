@@ -1,0 +1,130 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-create-social-accounts-table
+      author: claude
+      changes:
+        - createTable:
+            tableName: social_accounts
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_social_accounts_user
+                    references: users(id)
+              - column:
+                  name: organization_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_social_accounts_organization
+                    references: organizations(id)
+              - column:
+                  name: client_id
+                  type: uuid
+                  constraints:
+                    foreignKeyName: fk_social_accounts_client
+                    references: clients(id)
+              - column:
+                  name: platform
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: account_type
+                  type: varchar(20)
+                  defaultValue: BUSINESS
+                  constraints:
+                    nullable: false
+              - column:
+                  name: platform_account_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: account_name
+                  type: varchar(255)
+              - column:
+                  name: account_handle
+                  type: varchar(255)
+              - column:
+                  name: account_avatar_url
+                  type: varchar(500)
+              - column:
+                  name: access_token
+                  type: text
+                  constraints:
+                    nullable: false
+              - column:
+                  name: refresh_token
+                  type: text
+              - column:
+                  name: token_expires_at
+                  type: timestamp with time zone
+              - column:
+                  name: scopes
+                  type: text
+              - column:
+                  name: platform_metadata
+                  type: jsonb
+              - column:
+                  name: active
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: social_accounts
+            indexName: idx_social_accounts_user_id
+            columns:
+              - column:
+                  name: user_id
+        - createIndex:
+            tableName: social_accounts
+            indexName: idx_social_accounts_organization_id
+            columns:
+              - column:
+                  name: organization_id
+        - createIndex:
+            tableName: social_accounts
+            indexName: idx_social_accounts_client_id
+            columns:
+              - column:
+                  name: client_id
+        - createIndex:
+            tableName: social_accounts
+            indexName: idx_social_accounts_platform
+            columns:
+              - column:
+                  name: platform
+        - createIndex:
+            tableName: social_accounts
+            indexName: idx_social_accounts_active
+            columns:
+              - column:
+                  name: active
+        - createIndex:
+            tableName: social_accounts
+            indexName: idx_social_accounts_token_expires_at
+            columns:
+              - column:
+                  name: token_expires_at

@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/changes/002-create-authentication-tables.yaml
   - include:
       file: db/changelog/changes/003-seed-authentication-data.yaml
+  - include:
+      file: db/changelog/changes/004-create-social-accounts-table.yaml

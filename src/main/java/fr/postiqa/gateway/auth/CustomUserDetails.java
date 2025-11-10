@@ -126,5 +126,17 @@ public class CustomUserDetails implements UserDetails {
             this.organizationId = organizationId;
             this.clientId = clientId;
         }
+
+        public String getRoleName() {
+            return roleName;
+        }
+
+        public UUID getOrganizationId() {
+            return organizationId;
+        }
+
+        public UUID getClientId() {
+            return clientId;
+        }
     }
 }

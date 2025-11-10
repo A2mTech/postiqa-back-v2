@@ -281,20 +281,6 @@ events.publishEvent(new UserProfileAnalyzedEvent(userId, profile));
 void on(UserProfileAnalyzedEvent event) { ... }
 ```
 
-### Package-info.java
-
-Every Spring Modulith module MUST have:
-
-```java
-@org.springframework.modulith.ApplicationModule
-package fr.postiqa.modulename;
-```
-
-Mark shared modules in main class:
-```java
-@Modulith(sharedModules = {"shared", "database"})
-```
-
 ## Testing
 
 Test location: `src/test/java/fr/postiqa/`
