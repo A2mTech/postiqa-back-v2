@@ -4,7 +4,8 @@
       "Bash(./gradlew clean build:*)",
       "Bash(./gradlew compileJava:*)",
       "Bash(tree:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(./gradlew build:*)"
     ],
     "deny": [],
     "ask": []

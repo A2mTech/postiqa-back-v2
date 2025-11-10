@@ -1,0 +1,413 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-seed-roles
+      author: claude
+      changes:
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: name
+                  value: SUPER_ADMIN
+              - column:
+                  name: description
+                  value: Super administrator with all permissions
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: name
+                  value: BUSINESS_ADMIN
+              - column:
+                  name: description
+                  value: Business account administrator
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: name
+                  value: BUSINESS_USER
+              - column:
+                  name: description
+                  value: Business account standard user
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: name
+                  value: AGENCY_ADMIN
+              - column:
+                  name: description
+                  value: Agency administrator managing multiple clients
+        - insert:
+            tableName: roles
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: name
+                  value: AGENCY_USER
+              - column:
+                  name: description
+                  value: Agency user working on client accounts
+
+  - changeSet:
+      id: 003-seed-permissions
+      author: claude
+      changes:
+        # POST permissions
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: POST
+              - column:
+                  name: action
+                  value: CREATE
+              - column:
+                  name: description
+                  value: Create social media posts
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: POST
+              - column:
+                  name: action
+                  value: VIEW
+              - column:
+                  name: description
+                  value: View social media posts
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: POST
+              - column:
+                  name: action
+                  value: EDIT
+              - column:
+                  name: description
+                  value: Edit social media posts
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: POST
+              - column:
+                  name: action
+                  value: DELETE
+              - column:
+                  name: description
+                  value: Delete social media posts
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: POST
+              - column:
+                  name: action
+                  value: PUBLISH
+              - column:
+                  name: description
+                  value: Publish social media posts
+
+        # ANALYTICS permissions
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: ANALYTICS
+              - column:
+                  name: action
+                  value: VIEW
+              - column:
+                  name: description
+                  value: View analytics and metrics
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: ANALYTICS
+              - column:
+                  name: action
+                  value: EXPORT
+              - column:
+                  name: description
+                  value: Export analytics data
+
+        # CALENDAR permissions
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: CALENDAR
+              - column:
+                  name: action
+                  value: VIEW
+              - column:
+                  name: description
+                  value: View editorial calendar
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: CALENDAR
+              - column:
+                  name: action
+                  value: EDIT
+              - column:
+                  name: description
+                  value: Edit editorial calendar
+
+        # PROFILE permissions
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: PROFILE
+              - column:
+                  name: action
+                  value: VIEW
+              - column:
+                  name: description
+                  value: View user profile analysis
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: PROFILE
+              - column:
+                  name: action
+                  value: ANALYZE
+              - column:
+                  name: description
+                  value: Analyze user writing style
+
+        # CLIENT permissions (agency only)
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: CLIENT
+              - column:
+                  name: action
+                  value: VIEW
+              - column:
+                  name: description
+                  value: View client accounts
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: CLIENT
+              - column:
+                  name: action
+                  value: CREATE
+              - column:
+                  name: description
+                  value: Create client accounts
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: CLIENT
+              - column:
+                  name: action
+                  value: EDIT
+              - column:
+                  name: description
+                  value: Edit client accounts
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: CLIENT
+              - column:
+                  name: action
+                  value: DELETE
+              - column:
+                  name: description
+                  value: Delete client accounts
+
+        # USER permissions (admin only)
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: USER
+              - column:
+                  name: action
+                  value: MANAGE
+              - column:
+                  name: description
+                  value: Manage users and roles
+
+        # SETTINGS permissions
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: SETTINGS
+              - column:
+                  name: action
+                  value: VIEW
+              - column:
+                  name: description
+                  value: View settings
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  value: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: SETTINGS
+              - column:
+                  name: action
+                  value: EDIT
+              - column:
+                  name: description
+                  value: Edit settings
+
+  - changeSet:
+      id: 003-assign-permissions-to-business-user
+      author: claude
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO role_permissions (id, role_id, permission_id, created_at)
+              SELECT gen_random_uuid(), r.id, p.id, CURRENT_TIMESTAMP
+              FROM roles r, permissions p
+              WHERE r.name = 'BUSINESS_USER'
+              AND p.resource || ':' || p.action IN ('POST:CREATE', 'POST:VIEW', 'POST:EDIT', 'ANALYTICS:VIEW', 'CALENDAR:VIEW', 'PROFILE:VIEW', 'SETTINGS:VIEW')
+
+  - changeSet:
+      id: 003-assign-permissions-to-business-admin
+      author: claude
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO role_permissions (id, role_id, permission_id, created_at)
+              SELECT gen_random_uuid(), r.id, p.id, CURRENT_TIMESTAMP
+              FROM roles r, permissions p
+              WHERE r.name = 'BUSINESS_ADMIN'
+              AND p.resource IN ('POST', 'ANALYTICS', 'CALENDAR', 'PROFILE', 'SETTINGS')
+
+  - changeSet:
+      id: 003-assign-permissions-to-agency-user
+      author: claude
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO role_permissions (id, role_id, permission_id, created_at)
+              SELECT gen_random_uuid(), r.id, p.id, CURRENT_TIMESTAMP
+              FROM roles r, permissions p
+              WHERE r.name = 'AGENCY_USER'
+              AND p.resource || ':' || p.action IN ('CLIENT:VIEW', 'POST:CREATE', 'POST:VIEW', 'POST:EDIT', 'ANALYTICS:VIEW', 'CALENDAR:VIEW')
+
+  - changeSet:
+      id: 003-assign-permissions-to-agency-admin
+      author: claude
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO role_permissions (id, role_id, permission_id, created_at)
+              SELECT gen_random_uuid(), r.id, p.id, CURRENT_TIMESTAMP
+              FROM roles r, permissions p
+              WHERE r.name = 'AGENCY_ADMIN'
+              AND p.resource IN ('CLIENT', 'POST', 'ANALYTICS', 'CALENDAR', 'PROFILE', 'USER', 'SETTINGS')
+
+  - changeSet:
+      id: 003-assign-all-permissions-to-super-admin
+      author: claude
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO role_permissions (id, role_id, permission_id, created_at)
+              SELECT gen_random_uuid(), r.id, p.id, CURRENT_TIMESTAMP
+              FROM roles r
+              CROSS JOIN permissions p
+              WHERE r.name = 'SUPER_ADMIN'
