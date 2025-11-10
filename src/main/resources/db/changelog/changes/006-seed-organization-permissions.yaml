@@ -1,0 +1,222 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-insert-organization-permissions
+      author: claude
+      changes:
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  valueComputed: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: ORGANIZATION
+              - column:
+                  name: action
+                  value: MANAGE
+              - column:
+                  name: description
+                  value: Manage organization settings and configuration
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  valueComputed: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: MEMBER
+              - column:
+                  name: action
+                  value: INVITE
+              - column:
+                  name: description
+                  value: Invite new members to the organization
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  valueComputed: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: MEMBER
+              - column:
+                  name: action
+                  value: CREATE
+              - column:
+                  name: description
+                  value: Create members directly without invitation
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  valueComputed: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: MEMBER
+              - column:
+                  name: action
+                  value: REMOVE
+              - column:
+                  name: description
+                  value: Remove members from the organization
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  valueComputed: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: MEMBER
+              - column:
+                  name: action
+                  value: UPDATE_ROLE
+              - column:
+                  name: description
+                  value: Update member roles and permissions
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  valueComputed: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: PERMISSION
+              - column:
+                  name: action
+                  value: GRANT
+              - column:
+                  name: description
+                  value: Grant or revoke custom permissions to members
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  valueComputed: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: ACTIVITY
+              - column:
+                  name: action
+                  value: VIEW
+              - column:
+                  name: description
+                  value: View activity logs and audit trail
+        - insert:
+            tableName: permissions
+            columns:
+              - column:
+                  name: id
+                  valueComputed: gen_random_uuid()
+              - column:
+                  name: resource
+                  value: HIERARCHY
+              - column:
+                  name: action
+                  value: VIEW
+              - column:
+                  name: description
+                  value: View organization hierarchy
+
+  - changeSet:
+      id: 006-assign-permissions-to-super-admin
+      author: claude
+      changes:
+        - sql:
+            sql: >
+              INSERT INTO role_permissions (id, role_id, permission_id)
+              SELECT gen_random_uuid(), r.id, p.id
+              FROM roles r
+              CROSS JOIN permissions p
+              WHERE r.name = 'SUPER_ADMIN'
+              AND p.resource IN ('ORGANIZATION', 'MEMBER', 'PERMISSION', 'ACTIVITY', 'HIERARCHY')
+              AND NOT EXISTS (
+                SELECT 1 FROM role_permissions rp
+                WHERE rp.role_id = r.id AND rp.permission_id = p.id
+              );
+
+  - changeSet:
+      id: 006-assign-permissions-to-business-admin
+      author: claude
+      changes:
+        - sql:
+            sql: >
+              INSERT INTO role_permissions (id, role_id, permission_id)
+              SELECT gen_random_uuid(), r.id, p.id
+              FROM roles r
+              CROSS JOIN permissions p
+              WHERE r.name = 'BUSINESS_ADMIN'
+              AND (
+                (p.resource = 'ORGANIZATION' AND p.action = 'MANAGE')
+                OR (p.resource = 'MEMBER' AND p.action IN ('INVITE', 'CREATE', 'REMOVE', 'UPDATE_ROLE'))
+                OR (p.resource = 'PERMISSION' AND p.action = 'GRANT')
+                OR (p.resource = 'ACTIVITY' AND p.action = 'VIEW')
+                OR (p.resource = 'HIERARCHY' AND p.action = 'VIEW')
+              )
+              AND NOT EXISTS (
+                SELECT 1 FROM role_permissions rp
+                WHERE rp.role_id = r.id AND rp.permission_id = p.id
+              );
+
+  - changeSet:
+      id: 006-assign-permissions-to-business-user
+      author: claude
+      changes:
+        - sql:
+            sql: >
+              INSERT INTO role_permissions (id, role_id, permission_id)
+              SELECT gen_random_uuid(), r.id, p.id
+              FROM roles r
+              CROSS JOIN permissions p
+              WHERE r.name = 'BUSINESS_USER'
+              AND (p.resource = 'HIERARCHY' AND p.action = 'VIEW')
+              AND NOT EXISTS (
+                SELECT 1 FROM role_permissions rp
+                WHERE rp.role_id = r.id AND rp.permission_id = p.id
+              );
+
+  - changeSet:
+      id: 006-assign-permissions-to-agency-admin
+      author: claude
+      changes:
+        - sql:
+            sql: >
+              INSERT INTO role_permissions (id, role_id, permission_id)
+              SELECT gen_random_uuid(), r.id, p.id
+              FROM roles r
+              CROSS JOIN permissions p
+              WHERE r.name = 'AGENCY_ADMIN'
+              AND (
+                (p.resource = 'ORGANIZATION' AND p.action = 'MANAGE')
+                OR (p.resource = 'MEMBER' AND p.action IN ('INVITE', 'CREATE', 'REMOVE', 'UPDATE_ROLE'))
+                OR (p.resource = 'PERMISSION' AND p.action = 'GRANT')
+                OR (p.resource = 'ACTIVITY' AND p.action = 'VIEW')
+                OR (p.resource = 'HIERARCHY' AND p.action = 'VIEW')
+              )
+              AND NOT EXISTS (
+                SELECT 1 FROM role_permissions rp
+                WHERE rp.role_id = r.id AND rp.permission_id = p.id
+              );
+
+  - changeSet:
+      id: 006-assign-permissions-to-agency-user
+      author: claude
+      changes:
+        - sql:
+            sql: >
+              INSERT INTO role_permissions (id, role_id, permission_id)
+              SELECT gen_random_uuid(), r.id, p.id
+              FROM roles r
+              CROSS JOIN permissions p
+              WHERE r.name = 'AGENCY_USER'
+              AND (p.resource = 'HIERARCHY' AND p.action = 'VIEW')
+              AND NOT EXISTS (
+                SELECT 1 FROM role_permissions rp
+                WHERE rp.role_id = r.id AND rp.permission_id = p.id
+              );

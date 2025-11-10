@@ -1,0 +1,402 @@
+databaseChangeLog:
+  - changeSet:
+      id: 005-create-organization-members-table
+      author: claude
+      changes:
+        - createTable:
+            tableName: organization_members
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_org_member_user
+                    references: users(id)
+                    deleteCascade: true
+              - column:
+                  name: organization_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_org_member_organization
+                    references: organizations(id)
+                    deleteCascade: true
+              - column:
+                  name: manager_id
+                  type: uuid
+                  constraints:
+                    foreignKeyName: fk_org_member_manager
+                    references: users(id)
+                    deleteCascade: false
+              - column:
+                  name: position
+                  type: varchar(100)
+              - column:
+                  name: title
+                  type: varchar(200)
+              - column:
+                  name: status
+                  type: varchar(20)
+                  defaultValue: ACTIVE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: invited_by
+                  type: uuid
+                  constraints:
+                    foreignKeyName: fk_org_member_invited_by
+                    references: users(id)
+                    deleteCascade: false
+              - column:
+                  name: joined_at
+                  type: timestamp with time zone
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: organization_members
+            columnNames: user_id, organization_id
+            constraintName: uk_org_member_user_org
+        - createIndex:
+            tableName: organization_members
+            indexName: idx_org_members_user_id
+            columns:
+              - column:
+                  name: user_id
+        - createIndex:
+            tableName: organization_members
+            indexName: idx_org_members_org_id
+            columns:
+              - column:
+                  name: organization_id
+        - createIndex:
+            tableName: organization_members
+            indexName: idx_org_members_manager_id
+            columns:
+              - column:
+                  name: manager_id
+        - createIndex:
+            tableName: organization_members
+            indexName: idx_org_members_status
+            columns:
+              - column:
+                  name: status
+
+  - changeSet:
+      id: 005-create-organization-invitations-table
+      author: claude
+      changes:
+        - createTable:
+            tableName: organization_invitations
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: email
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: organization_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_org_inv_organization
+                    references: organizations(id)
+                    deleteCascade: true
+              - column:
+                  name: role_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_org_inv_role
+                    references: roles(id)
+                    deleteCascade: false
+              - column:
+                  name: client_id
+                  type: uuid
+                  constraints:
+                    foreignKeyName: fk_org_inv_client
+                    references: clients(id)
+                    deleteCascade: true
+              - column:
+                  name: invited_by
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_org_inv_invited_by
+                    references: users(id)
+                    deleteCascade: false
+              - column:
+                  name: token
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: expires_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: varchar(20)
+                  defaultValue: PENDING
+                  constraints:
+                    nullable: false
+              - column:
+                  name: accepted_at
+                  type: timestamp with time zone
+              - column:
+                  name: accepted_by
+                  type: uuid
+                  constraints:
+                    foreignKeyName: fk_org_inv_accepted_by
+                    references: users(id)
+                    deleteCascade: false
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: organization_invitations
+            indexName: idx_org_inv_email
+            columns:
+              - column:
+                  name: email
+        - createIndex:
+            tableName: organization_invitations
+            indexName: idx_org_inv_org_id
+            columns:
+              - column:
+                  name: organization_id
+        - createIndex:
+            tableName: organization_invitations
+            indexName: idx_org_inv_token
+            unique: true
+            columns:
+              - column:
+                  name: token
+        - createIndex:
+            tableName: organization_invitations
+            indexName: idx_org_inv_status
+            columns:
+              - column:
+                  name: status
+        - createIndex:
+            tableName: organization_invitations
+            indexName: idx_org_inv_expires_at
+            columns:
+              - column:
+                  name: expires_at
+
+  - changeSet:
+      id: 005-create-user-permission-overrides-table
+      author: claude
+      changes:
+        - createTable:
+            tableName: user_permission_overrides
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_perm_override_user
+                    references: users(id)
+                    deleteCascade: true
+              - column:
+                  name: organization_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_perm_override_organization
+                    references: organizations(id)
+                    deleteCascade: true
+              - column:
+                  name: permission_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_perm_override_permission
+                    references: permissions(id)
+                    deleteCascade: false
+              - column:
+                  name: granted
+                  type: boolean
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reason
+                  type: varchar(500)
+              - column:
+                  name: granted_by
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_perm_override_granted_by
+                    references: users(id)
+                    deleteCascade: false
+              - column:
+                  name: created_at
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: user_permission_overrides
+            columnNames: user_id, organization_id, permission_id
+            constraintName: uk_user_perm_org
+        - createIndex:
+            tableName: user_permission_overrides
+            indexName: idx_perm_override_user_id
+            columns:
+              - column:
+                  name: user_id
+        - createIndex:
+            tableName: user_permission_overrides
+            indexName: idx_perm_override_org_id
+            columns:
+              - column:
+                  name: organization_id
+        - createIndex:
+            tableName: user_permission_overrides
+            indexName: idx_perm_override_perm_id
+            columns:
+              - column:
+                  name: permission_id
+
+  - changeSet:
+      id: 005-create-activity-logs-table
+      author: claude
+      changes:
+        - createTable:
+            tableName: activity_logs
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_activity_user
+                    references: users(id)
+                    deleteCascade: false
+              - column:
+                  name: organization_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_activity_organization
+                    references: organizations(id)
+                    deleteCascade: true
+              - column:
+                  name: client_id
+                  type: uuid
+                  constraints:
+                    foreignKeyName: fk_activity_client
+                    references: clients(id)
+                    deleteCascade: true
+              - column:
+                  name: action
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: resource_type
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: resource_id
+                  type: uuid
+              - column:
+                  name: ip_address
+                  type: varchar(45)
+              - column:
+                  name: user_agent
+                  type: varchar(500)
+              - column:
+                  name: metadata
+                  type: jsonb
+              - column:
+                  name: timestamp
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: activity_logs
+            indexName: idx_activity_user_id
+            columns:
+              - column:
+                  name: user_id
+        - createIndex:
+            tableName: activity_logs
+            indexName: idx_activity_org_id
+            columns:
+              - column:
+                  name: organization_id
+        - createIndex:
+            tableName: activity_logs
+            indexName: idx_activity_client_id
+            columns:
+              - column:
+                  name: client_id
+        - createIndex:
+            tableName: activity_logs
+            indexName: idx_activity_action
+            columns:
+              - column:
+                  name: action
+        - createIndex:
+            tableName: activity_logs
+            indexName: idx_activity_resource_type
+            columns:
+              - column:
+                  name: resource_type
+        - createIndex:
+            tableName: activity_logs
+            indexName: idx_activity_timestamp
+            columns:
+              - column:
+                  name: timestamp

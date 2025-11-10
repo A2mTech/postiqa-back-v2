@@ -1,5 +1,7 @@
 package fr.postiqa.gateway.auth.authorization;
 
+import fr.postiqa.database.entity.UserPermissionOverrideEntity;
+import fr.postiqa.database.repository.UserPermissionOverrideRepository;
 import fr.postiqa.gateway.auth.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -22,10 +25,17 @@ import java.util.UUID;
 public class CustomPermissionEvaluator implements PermissionEvaluator {
 
     private final ScopeValidator scopeValidator;
+    private final HierarchyValidator hierarchyValidator;
+    private final UserPermissionOverrideRepository permissionOverrideRepository;
 
     /**
      * Evaluate permission for a resource-action pair
      * Example: hasPermission('POST', 'CREATE')
+     *
+     * Checks in order:
+     * 1. Custom permission overrides (granted/revoked)
+     * 2. Role-based permissions (exact match)
+     * 3. Role-based wildcard permissions (resource:*)
      *
      * @param authentication current authentication
      * @param targetDomainObject target resource (e.g., 'POST', 'CALENDAR')
@@ -38,9 +48,26 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
             return false;
         }
 
+        Object principal = authentication.getPrincipal();
+        if (!(principal instanceof CustomUserDetails userDetails)) {
+            return false;
+        }
+
         String resource = targetDomainObject.toString();
         String action = permission.toString();
         String requiredPermission = resource + ":" + action;
+
+        // Check custom permission overrides first
+        Boolean customPermission = checkCustomPermissionOverride(userDetails, resource, action);
+        if (customPermission != null) {
+            if (customPermission) {
+                log.debug("User {} granted permission via override: {}", authentication.getName(), requiredPermission);
+                return true;
+            } else {
+                log.debug("User {} denied permission via override: {}", authentication.getName(), requiredPermission);
+                return false;
+            }
+        }
 
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
 
@@ -124,5 +151,74 @@ public class CustomPermissionEvaluator implements PermissionEvaluator {
         }
 
         return scopeValidator.hasClientAccess(userDetails, clientId);
+    }
+
+    /**
+     * Check if user can manage another member (via hierarchy).
+     * A user can manage a member if they are a direct or indirect manager.
+     *
+     * @param authentication current authentication
+     * @param targetMemberId target member user ID
+     * @param organizationId organization context
+     * @return true if user can manage the member
+     */
+    public boolean canManageMember(Authentication authentication, UUID targetMemberId, UUID organizationId) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (!(principal instanceof CustomUserDetails userDetails)) {
+            return false;
+        }
+
+        return hierarchyValidator.canManageMember(userDetails.getId(), targetMemberId, organizationId);
+    }
+
+    /**
+     * Check custom permission override for a user.
+     * Returns:
+     * - true if permission is explicitly granted
+     * - false if permission is explicitly revoked
+     * - null if no override exists (fall back to role-based permissions)
+     *
+     * @param userDetails current user
+     * @param resource target resource
+     * @param action target action
+     * @return Boolean (true/false) or null if no override
+     */
+    private Boolean checkCustomPermissionOverride(CustomUserDetails userDetails, String resource, String action) {
+        // Get all organization IDs for this user
+        List<UUID> organizationIds = userDetails.getScopes().stream()
+            .map(CustomUserDetails.ScopeInfo::getOrganizationId)
+            .filter(orgId -> orgId != null)
+            .distinct()
+            .toList();
+
+        if (organizationIds.isEmpty()) {
+            return null;
+        }
+
+        // Check overrides for each organization
+        for (UUID organizationId : organizationIds) {
+            List<UserPermissionOverrideEntity> overrides =
+                permissionOverrideRepository.findByUserIdAndOrganizationIdWithPermission(
+                    userDetails.getId(),
+                    organizationId
+                );
+
+            for (UserPermissionOverrideEntity override : overrides) {
+                String overrideResource = override.getPermission().getResource();
+                String overrideAction = override.getPermission().getAction();
+
+                // Check exact match or wildcard
+                if (overrideResource.equals(resource) &&
+                    (overrideAction.equals(action) || overrideAction.equals("*"))) {
+                    return override.getGranted();
+                }
+            }
+        }
+
+        return null; // No override found
     }
 }
