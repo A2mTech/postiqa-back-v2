@@ -1,31 +1,37 @@
 package fr.postiqa.gateway.auth.usecase.organization;
 
 import fr.postiqa.database.entity.OrganizationInvitationEntity;
-import fr.postiqa.gateway.auth.service.ActivityLogService;
 import fr.postiqa.gateway.auth.service.InvitationService;
+import fr.postiqa.shared.annotation.UseCase;
 import fr.postiqa.shared.dto.auth.InviteMemberRequest;
 import fr.postiqa.shared.dto.auth.InviteMemberResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.UUID;
 
 /**
  * Use case for inviting a member to an organization.
  */
-@Component
+@UseCase(
+    value = "InviteMember",
+    resourceType = "INVITATION",
+    description = "Invites a new member to the organization"
+)
+@Service
 @RequiredArgsConstructor
 @Slf4j
-public class InviteMemberUseCase {
+public class InviteMemberUseCase implements fr.postiqa.shared.usecase.UseCase<InviteMemberRequest, InviteMemberResponse> {
 
     private final InvitationService invitationService;
-    private final ActivityLogService activityLogService;
 
     @Transactional
-    public InviteMemberResponse execute(InviteMemberRequest request, UUID invitedByUserId) {
+    public InviteMemberResponse execute(InviteMemberRequest request) {
+        // Get invitedByUserId from tenant context (handled by UseCaseHandler)
+        UUID invitedByUserId = fr.postiqa.gateway.auth.authorization.TenantContextHolder.getUserId();
+
         // Create invitation
         OrganizationInvitationEntity invitation = invitationService.createInvitation(
             request.getEmail(),
@@ -33,22 +39,6 @@ public class InviteMemberUseCase {
             request.getRoleId(),
             request.getClientId(),
             invitedByUserId
-        );
-
-        // Log activity
-        activityLogService.logActivity(
-            invitedByUserId,
-            request.getOrganizationId(),
-            request.getClientId(),
-            "MEMBER_INVITED",
-            "INVITATION",
-            invitation.getId(),
-            null, // IP address should be passed from controller
-            null, // User agent should be passed from controller
-            Map.of(
-                "email", request.getEmail(),
-                "role", invitation.getRole().getName()
-            )
         );
 
         log.info("Member invited: {} to organization {}", request.getEmail(), request.getOrganizationId());

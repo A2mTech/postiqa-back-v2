@@ -126,6 +126,10 @@ public class MultiProviderAnalysisGateway implements AnalysisPort {
             case CONTENT_THEMES -> analyzeContentThemes(posts, granularity, provider);
             case IMAGE_ANALYSIS -> analyzeImages(posts, granularity, provider);
             case MULTIMODAL -> analyzeMultimodal(posts, granularity, provider);
+            default -> throw new UnsupportedOperationException(
+                "Analysis type " + analysisType.getDisplayName() +
+                " is not supported by this method. Use specialized analysis workflows instead."
+            );
         };
     }
 }

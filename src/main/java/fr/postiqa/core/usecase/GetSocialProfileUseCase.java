@@ -7,7 +7,6 @@ import fr.postiqa.core.domain.port.ScrapingPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
@@ -20,7 +19,12 @@ import java.util.concurrent.CompletableFuture;
  * 2. ASYNC_THREAD - Non-blocking, returns CompletableFuture
  * 3. ASYNC_NATIVE - Returns job ID for polling
  */
-@Component
+@fr.postiqa.shared.annotation.UseCase(
+    value = "GetSocialProfile",
+    resourceType = "SOCIAL_PROFILE",
+    description = "Retrieves social media profile information",
+    logActivity = false  // Read-only operation
+)
 public class GetSocialProfileUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(GetSocialProfileUseCase.class);

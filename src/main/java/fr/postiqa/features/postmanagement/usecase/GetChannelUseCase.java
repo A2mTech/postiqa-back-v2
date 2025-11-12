@@ -6,14 +6,19 @@ import fr.postiqa.features.postmanagement.domain.model.Channel;
 import fr.postiqa.features.postmanagement.domain.port.ChannelRepositoryPort;
 import fr.postiqa.features.postmanagement.domain.port.TenantAccessPort;
 import fr.postiqa.features.postmanagement.domain.vo.ChannelId;
-import org.springframework.stereotype.Component;
+import fr.postiqa.shared.annotation.UseCase;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Use case for retrieving a single channel by ID.
  */
-@Component
-public class GetChannelUseCase {
+@UseCase(
+    value = "GetChannel",
+    resourceType = "CHANNEL",
+    description = "Retrieves a single channel by ID",
+    logActivity = false
+)
+public class GetChannelUseCase implements fr.postiqa.shared.usecase.UseCase<GetChannelUseCase.GetChannelQuery, Channel> {
 
     private final ChannelRepositoryPort channelRepository;
     private final TenantAccessPort tenantAccess;

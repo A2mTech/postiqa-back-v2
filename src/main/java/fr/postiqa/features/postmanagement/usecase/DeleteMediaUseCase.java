@@ -10,14 +10,18 @@ import fr.postiqa.features.postmanagement.domain.port.TenantAccessPort;
 import fr.postiqa.features.postmanagement.domain.vo.Media;
 import fr.postiqa.features.postmanagement.domain.vo.MediaId;
 import fr.postiqa.features.postmanagement.domain.vo.PostId;
-import org.springframework.stereotype.Component;
+import fr.postiqa.shared.annotation.UseCase;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Use case for deleting media from a post.
  */
-@Component
-public class DeleteMediaUseCase {
+@UseCase(
+    value = "DeleteMedia",
+    resourceType = "MEDIA",
+    description = "Deletes media from a post"
+)
+public class DeleteMediaUseCase implements fr.postiqa.shared.usecase.UseCase<DeleteMediaUseCase.DeleteMediaCommand, Void> {
 
     private final PostRepositoryPort postRepository;
     private final MediaStoragePort mediaStorage;
@@ -45,7 +49,7 @@ public class DeleteMediaUseCase {
      * Execute the delete media use case
      */
     @Transactional
-    public void execute(DeleteMediaCommand command) {
+    public Void execute(DeleteMediaCommand command) {
         // Get current tenant context
         TenantAccessPort.TenantContext tenant = tenantAccess.getCurrentTenant();
 
@@ -71,6 +75,8 @@ public class DeleteMediaUseCase {
             // Log error but don't fail the operation
             System.err.println("Failed to delete media from storage: " + media.storageKey() + " - " + e.getMessage());
         }
+
+        return null;
     }
 
     private Post findPostWithAccess(PostId postId, TenantAccessPort.TenantContext tenant) {

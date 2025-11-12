@@ -77,82 +77,67 @@ The application is a **package-based modular monolith** (NOT multi-module Gradle
 
 ### Module Structure
 
-The application is organized into 11 Spring Modulith modules:
+The application is organized into **8 Spring Modulith modules**:
 
 #### 1. Foundation Modules (Shared Across All)
 
-- **`shared`** - DTOs, exceptions, utils, annotations partagés
-  - `shared/dto/` - Data Transfer Objects
-  - `shared/exception/` - Custom exceptions
-  - `shared/util/` - Utility classes
-  - `shared/annotation/` - Custom annotations
+- **`shared`** - DTOs (45), exceptions (25), custom annotations (@UseCase, @LogActivity)
+  - Custom `@UseCase` annotation combines @Component with activity logging and tenant tracking
+  - Enums: SocialPlatform, PostStatus, PostType, MediaType
 
-- **`database`** - Entities JPA et repositories Spring Data uniquement
-  - `database/entity/` - JPA entities
-  - `database/repository/` - Spring Data repositories
+- **`database`** - 22 JPA entities, Spring Data repositories
+  - Auth entities: UserEntity, RoleEntity, PermissionEntity, ApiKeyEntity, RefreshTokenEntity
+  - Organization entities: OrganizationEntity, ClientEntity, OrganizationMemberEntity
+  - Social entities: SocialAccountEntity, PostEntity, PostChannelEntity, MediaEntity
+  - Workflow entities: WorkflowInstanceEntity, WorkflowStepExecutionEntity
   - **NO BUSINESS LOGIC** - Pure persistence layer
 
-- **`gateway`** - Authentification et sécurité
-  - `gateway/config/` - Spring Security configuration
-  - `gateway/filter/` - Security filters (JWT, CORS)
-  - `gateway/auth/` - Authentication services
+- **`gateway`** - Authentication, authorization, organization management
+  - **17 use cases** for auth and org management (InviteMemberUseCase, UpdateMemberRoleUseCase, etc.)
+  - Triple auth: JWT (stateless), API Key, OAuth2 (Google, GitHub, LinkedIn)
+  - Multi-tenant security with scope validation
+  - Custom permission evaluator with resource-action pattern
 
 #### 2. Core Module (Clean Architecture)
 
-- **`core`** - Orchestration scraping + analyse IA
-  - **Architecture**: Clean Architecture complète
-  - **Responsabilité**: Scraper posts sociaux, analyser style d'écriture
-  - **Structure**:
-    - `core/domain/model/` - Entities métier, value objects
-    - `core/domain/port/` - Interfaces (ScrapingPort, AnalysisPort)
-    - `core/usecase/` - Business logic (AnalyzeUserProfileUseCase)
-    - `core/adapter/in/` - Adapters entrants
-    - `core/adapter/out/` - Adapters sortants
-    - `core/infrastructure/client/` - Clients API externes (Apify, Bright Data, OpenAI)
-    - `core/infrastructure/config/` - Configurations
+- **`core`** - Scraping orchestration + AI analysis + workflow engine
+  - **12 use cases**: 5 scraping (GetSocialPostsUseCase, AnalyzeUserProfileUseCase), 7 workflow
+  - **DAG-based workflow engine**: Sequential/parallel execution, retry, timeout, compensation
+  - **External integrations**: Apify (scraping), OpenAI (AI analysis)
+  - Supports sync/async execution modes with caching (30min TTL)
 
 #### 3. Features Modules
 
-**Features Clean Architecture** (logique métier complexe):
+**Implemented Features (Clean Architecture)**:
 
-- **`features.contentgeneration`** - Génération de posts avec learning
-  - **Architecture**: Clean Architecture (domain/usecase/adapter/infrastructure)
-  - **Responsabilité**: Générer posts dans le style utilisateur, apprendre des modifications
+- **`features.postmanagement`** - Post lifecycle management
+  - **11 use cases**: CRUD, scheduling, media upload, channel management
+  - Domain models: Post, Channel (value objects: PostId, Content, Media)
+  - Event publication: PostCreatedEvent, PostScheduledEvent, PostPublishedEvent
 
-- **`features.editorialcalendar`** - Stratégie éditoriale dynamique
-  - **Architecture**: Clean Architecture (domain/usecase/adapter/infrastructure)
-  - **Responsabilité**: Créer stratégie hebdomadaire basée sur profil + business + objectifs
+- **`features.socialaccounts`** - Social platform connectivity
+  - **7 use cases**: OAuth2 flow, token management, connection testing
+  - Platforms: LinkedIn, Twitter, Instagram, YouTube, TikTok
+  - Automatic token refresh scheduler (hourly)
 
-**Features Spring Classique**:
+**Planned Features (Directories only, no implementation)**:
 
-- **`features.publishing`** - Programmation et publication
-  - `publishing/service/` - Services de publication
-  - `publishing/scheduler/` - Schedulers automatiques
-
-- **`features.weeklybrief`** - Brief vocal hebdomadaire
-  - **Responsabilité**: Transcription audio → extraction événements → génération posts
-  - `weeklybrief/service/` - Orchestration du workflow
-  - `weeklybrief/transcription/` - Whisper API integration
-  - `weeklybrief/extraction/` - Extraction d'événements via IA
-
-- **`features.analytics`** - Analyse de performance
-  - `analytics/service/` - Services d'analyse
-  - `analytics/metrics/` - Calcul de métriques
+- **`features.contentgeneration`** - AI-powered content generation (NOT IMPLEMENTED)
+- **`features.editorialcalendar`** - Editorial strategy (NOT IMPLEMENTED)
+- **`features.publishing`** - Post publication orchestration (EMPTY)
+- **`features.weeklybrief`** - Audio transcription workflow (EMPTY)
+- **`features.analytics`** - Performance metrics (EMPTY)
 
 #### 4. API REST Modules
 
-- **`business`** - API REST pour entreprises
-  - **Endpoints**: `/api/business/*`
-  - **Responsabilité**: Orchestrer features pour entreprises gérant leur propre compte
-  - `business/controller/` - REST controllers
-  - `business/config/` - Configurations
+- **`business`** - API pour entreprises (single organization)
+  - **Endpoints**: `/api/business/posts`, `/social-accounts`, `/organization`
+  - Thin orchestration layer calling feature use cases directly
 
-- **`agency`** - API REST pour agences
-  - **Endpoints**: `/api/agency/*`
-  - **Responsabilité**: Orchestrer features en mode multi-clients
-  - `agency/controller/` - REST controllers
-  - `agency/config/` - Configurations
-  - `agency/tenant/` - Gestion multi-tenant
+- **`agency`** - API pour agences (multi-client)
+  - **Endpoints**: `/api/agency/clients/{clientId}/posts`, `/clients/{clientId}/social-accounts`
+  - Client-scoped operations with multi-tenant isolation
+  - Client access delegation for agency users
 
 ### Module Dependencies
 
@@ -173,13 +158,14 @@ business/agency → features/* → core → database → shared
 
 ### Architectural Patterns
 
-- **Clean Architecture**: Appliquée sur `core`, `features.contentgeneration`, `features.editorialcalendar`
-- **Spring Classique**: Pour features simples et API REST modules
-- **Ports & Adapters**: Interfaces domain, implémentations infrastructure
-- **API Orchestration**: Core et features orchestrent des APIs externes uniquement (Apify, OpenAI, Whisper, etc.)
-- **JPA Entities**: Hibernate enhancements avec association management activé
-- **Spring Security**: Couche sécurité centralisée dans gateway
-- **Event-Driven**: Spring Modulith events pour communication inter-modules
+- **Clean Architecture**: `core`, `features.postmanagement`, `features.socialaccounts` (domain/port/usecase/adapter/infrastructure)
+- **Ports & Adapters**: 15 port interfaces for external boundaries
+- **Event-Driven**: Spring Modulith ApplicationEventPublisher for inter-module communication
+- **Multi-Tenancy**: Organization/Client scoping with JWT claims, scope validation in gateway
+- **External API Orchestration**: Apify (scraping), OpenAI (AI), OAuth2 providers (no custom scraping/AI)
+- **Workflow Engine**: DAG-based execution with resilience patterns (retry, timeout, compensation)
+- **Security**: Stateless JWT + API Key + OAuth2, RBAC with permission overrides
+- **Database**: PostgreSQL with pgvector, JSONB for flexible metadata, UUID primary keys
 
 ## Important Configuration
 
@@ -242,10 +228,11 @@ Test configuration in `src/test/resources/application-test.properties`:
    - ✅ Pure JPA mapping only
    - ✅ Use repository methods for data access
 
-4. **Clean Architecture layers (core, contentgeneration, editorialcalendar)**
+4. **Clean Architecture layers (core, postmanagement, socialaccounts)**
    - ❌ `domain` NEVER depends on `infrastructure`
    - ❌ `usecase` NEVER depends on `adapter` or `infrastructure`
    - ✅ Dependency flow: infrastructure → adapter → usecase → domain
+   - ✅ All use cases annotated with `@UseCase` for automatic activity logging
 
 ### Naming Conventions
 
@@ -301,12 +288,16 @@ Test location: `src/test/java/fr/postiqa/`
 
 ### Testing Strategy
 
-- **`ModularityTests`**: Validates module boundaries (MUST pass)
-- **Unit tests**: In same package as code under test
-- **Integration tests**: Use `@SpringBootTest` with `@ActiveProfiles("test")`
-- **H2 in-memory DB**: For tests (configured in `application-test.properties`)
+**Current State**: Minimal test coverage (2 test classes only)
 
-Spring Modulith test support is included for module boundary testing.
+- **`ModularityTests`**: Validates module boundaries, detects cycles, generates docs (CRITICAL - run before commit)
+- **`PostiqaBackV2ApplicationTests`**: Basic smoke test
+
+**Test Configuration** (application-test.properties):
+- H2 in-memory database with JPA `create-drop` (Liquibase disabled)
+- Redis, Security, Spring AI disabled for isolated testing
+
+**TODO**: Implement unit/integration tests for use cases, adapters, and controllers.
 
 ## Spring AI Features
 
@@ -321,4 +312,18 @@ When working with AI features, ensure proper configuration of OpenAI API keys an
 
 ## Security
 
-Spring Security is configured. Authentication and authorization should be implemented according to the application's security requirements. Spring Security test support is available for testing secured endpoints.
+**Authentication** (3 mechanisms):
+- **JWT**: Stateless Bearer tokens (15min access, 30d refresh) with HMAC-SHA, custom claims (user_id, organization_id, client_id)
+- **API Key**: Header-based `X-API-Key` for machine-to-machine
+- **OAuth2**: Social login (Google, GitHub, LinkedIn) with custom success handler
+
+**Authorization**:
+- **RBAC**: Role-permission mapping with `ROLE_` prefix
+- **Resource-Action Permissions**: `POST:CREATE`, `POST:*` with wildcard support
+- **Permission Overrides**: Database-driven custom grants/revocations per user
+- **Scope Validation**: Multi-tenant isolation via organization_id/client_id in JWT
+- **Method Security**: `@PreAuthorize` with CustomPermissionEvaluator
+
+**Filter Chain**: ApiKeyFilter → JwtFilter → TenantResolutionFilter → Spring Security
+
+See `gateway/config/SecurityConfig.java` for configuration details.

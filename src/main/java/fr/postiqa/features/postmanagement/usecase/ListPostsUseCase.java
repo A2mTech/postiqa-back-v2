@@ -3,8 +3,8 @@ package fr.postiqa.features.postmanagement.usecase;
 import fr.postiqa.features.postmanagement.domain.model.Post;
 import fr.postiqa.features.postmanagement.domain.port.PostRepositoryPort;
 import fr.postiqa.features.postmanagement.domain.port.TenantAccessPort;
+import fr.postiqa.shared.annotation.UseCase;
 import fr.postiqa.shared.enums.PostStatus;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -12,8 +12,13 @@ import java.util.List;
 /**
  * Use case for listing posts with pagination and filters.
  */
-@Component
-public class ListPostsUseCase {
+@UseCase(
+    value = "ListPosts",
+    resourceType = "POST",
+    description = "Lists posts with pagination and filters",
+    logActivity = false
+)
+public class ListPostsUseCase implements fr.postiqa.shared.usecase.UseCase<ListPostsUseCase.ListPostsQuery, List<Post>> {
 
     private final PostRepositoryPort postRepository;
     private final TenantAccessPort tenantAccess;

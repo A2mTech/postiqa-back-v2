@@ -6,34 +6,41 @@ import fr.postiqa.database.entity.UserRoleEntity;
 import fr.postiqa.database.repository.OrganizationMemberRepository;
 import fr.postiqa.database.repository.RoleRepository;
 import fr.postiqa.database.repository.UserRoleRepository;
-import fr.postiqa.gateway.auth.service.ActivityLogService;
+import fr.postiqa.shared.annotation.UseCase;
 import fr.postiqa.shared.dto.auth.UpdateMemberRoleRequest;
 import fr.postiqa.shared.exception.auth.CannotModifySelfException;
 import fr.postiqa.shared.exception.auth.MemberNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 /**
  * Use case for updating a member's role.
  */
-@Component
+@UseCase(
+    value = "UpdateMemberRole",
+    resourceType = "MEMBER",
+    description = "Updates a member's role in the organization"
+)
+@Service
 @RequiredArgsConstructor
 @Slf4j
-public class UpdateMemberRoleUseCase {
+public class UpdateMemberRoleUseCase implements fr.postiqa.shared.usecase.UseCase<UpdateMemberRoleRequest, Void> {
 
     private final OrganizationMemberRepository memberRepository;
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
-    private final ActivityLogService activityLogService;
 
     @Transactional
-    public void execute(UUID memberId, UpdateMemberRoleRequest request, UUID updatedByUserId, UUID organizationId) {
+    public Void execute(UpdateMemberRoleRequest request) {
+        // Get context from tenant holder
+        UUID updatedByUserId = fr.postiqa.gateway.auth.authorization.TenantContextHolder.getUserId();
+        UUID organizationId = fr.postiqa.gateway.auth.authorization.TenantContextHolder.getOrganizationId();
+        UUID memberId = request.getMemberId();
         OrganizationMemberEntity member = memberRepository.findById(memberId)
             .orElseThrow(() -> new MemberNotFoundException("Member not found"));
 
@@ -77,24 +84,9 @@ public class UpdateMemberRoleUseCase {
 
         userRoleRepository.save(newUserRole);
 
-        // Log activity
-        activityLogService.logActivity(
-            updatedByUserId,
-            organizationId,
-            request.getClientId(),
-            "MEMBER_ROLE_UPDATED",
-            "MEMBER",
-            memberId,
-            null,
-            null,
-            Map.of(
-                "userEmail", member.getUser().getEmail(),
-                "oldRole", oldRoleName,
-                "newRole", newRole.getName()
-            )
-        );
-
         log.info("Updated role for member {} from {} to {}",
             member.getUser().getEmail(), oldRoleName, newRole.getName());
+
+        return null;
     }
 }

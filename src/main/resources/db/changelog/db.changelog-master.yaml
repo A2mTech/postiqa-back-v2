@@ -11,3 +11,5 @@ databaseChangeLog:
       file: db/changelog/changes/005-create-organization-management-tables.yaml
   - include:
       file: db/changelog/changes/006-seed-organization-permissions.yaml
+  - include:
+      file: db/changelog/changes/007-create-ultra-deep-analysis-tables.yaml

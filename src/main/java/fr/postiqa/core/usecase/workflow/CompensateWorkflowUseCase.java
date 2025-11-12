@@ -17,6 +17,11 @@ import java.util.*;
  * Use case for manually triggering compensation (rollback) on a workflow.
  * This is typically used when automatic compensation fails or for manual intervention.
  */
+@fr.postiqa.shared.annotation.UseCase(
+    value = "CompensateWorkflow",
+    resourceType = "WORKFLOW",
+    description = "Executes compensation/rollback for failed workflow"
+)
 @Service
 @RequiredArgsConstructor
 @Slf4j

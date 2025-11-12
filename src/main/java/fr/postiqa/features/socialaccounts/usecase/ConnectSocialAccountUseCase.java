@@ -4,12 +4,12 @@ import fr.postiqa.features.socialaccounts.domain.model.OAuth2Token;
 import fr.postiqa.features.socialaccounts.domain.model.SocialAccount;
 import fr.postiqa.features.socialaccounts.domain.port.OAuth2Port;
 import fr.postiqa.features.socialaccounts.domain.port.SocialAccountPort;
+import fr.postiqa.shared.annotation.UseCase;
 import fr.postiqa.shared.enums.SocialPlatform;
 import fr.postiqa.shared.exception.socialaccount.OAuth2AuthenticationException;
 import fr.postiqa.shared.exception.socialaccount.SocialAccountAlreadyConnectedException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -20,28 +20,22 @@ import java.util.UUID;
  * Use case for connecting a social media account.
  * Handles OAuth2 callback and saves the connected account.
  */
-@Component
+@UseCase(
+    value = "ConnectSocialAccount",
+    resourceType = "SOCIAL_ACCOUNT",
+    description = "Connects a social media account"
+)
 @RequiredArgsConstructor
 @Slf4j
-public class ConnectSocialAccountUseCase {
+public class ConnectSocialAccountUseCase implements fr.postiqa.shared.usecase.UseCase<ConnectSocialAccountUseCase.ConnectAccountCommand, SocialAccount> {
 
     private final OAuth2Port oauth2Port;
     private final SocialAccountPort socialAccountPort;
 
     /**
-     * Execute the use case.
-     *
-     * @param platform Social media platform
-     * @param code Authorization code from OAuth2 callback
-     * @param redirectUri Redirect URI used during authorization
-     * @param userId User ID connecting the account
-     * @param organizationId Organization ID
-     * @param clientId Client ID (optional, for agencies)
-     * @param scopes Granted OAuth2 scopes
-     * @return Connected social account
+     * Command for connecting social account
      */
-    @Transactional
-    public SocialAccount execute(
+    public record ConnectAccountCommand(
         SocialPlatform platform,
         String code,
         String redirectUri,
@@ -49,50 +43,59 @@ public class ConnectSocialAccountUseCase {
         UUID organizationId,
         UUID clientId,
         String scopes
-    ) {
-        log.info("Connecting social account for platform: {} by user: {}", platform, userId);
+    ) {}
+
+    /**
+     * Execute the use case.
+     *
+     * @param command Command with connection details
+     * @return Connected social account
+     */
+    @Transactional
+    public SocialAccount execute(ConnectAccountCommand command) {
+        log.info("Connecting social account for platform: {} by user: {}", command.platform(), command.userId());
 
         try {
             // Exchange authorization code for access token
-            OAuth2Token token = oauth2Port.exchangeCodeForToken(platform, code, redirectUri);
+            OAuth2Token token = oauth2Port.exchangeCodeForToken(command.platform(), command.code(), command.redirectUri());
 
             if (token == null || token.getAccessToken() == null) {
-                throw new OAuth2AuthenticationException("Failed to obtain access token from " + platform);
+                throw new OAuth2AuthenticationException("Failed to obtain access token from " + command.platform());
             }
 
             // Fetch account information from platform
-            Map<String, Object> accountInfo = oauth2Port.fetchAccountInfo(platform, token.getAccessToken());
+            Map<String, Object> accountInfo = oauth2Port.fetchAccountInfo(command.platform(), token.getAccessToken());
 
-            String platformAccountId = extractPlatformAccountId(accountInfo, platform);
+            String platformAccountId = extractPlatformAccountId(accountInfo, command.platform());
             String accountName = extractAccountName(accountInfo);
             String accountHandle = extractAccountHandle(accountInfo);
             String accountAvatarUrl = extractAccountAvatarUrl(accountInfo);
 
             // Check if account is already connected
-            boolean alreadyConnected = clientId != null
+            boolean alreadyConnected = command.clientId() != null
                 ? socialAccountPort.existsByOrganizationAndPlatformAndPlatformAccountId(
-                    organizationId, platform, platformAccountId)
+                    command.organizationId(), command.platform(), platformAccountId)
                 : socialAccountPort.existsByOrganizationAndPlatformAndPlatformAccountId(
-                    organizationId, platform, platformAccountId);
+                    command.organizationId(), command.platform(), platformAccountId);
 
             if (alreadyConnected) {
                 throw new SocialAccountAlreadyConnectedException(
-                    String.format("Account %s on %s is already connected", platformAccountId, platform)
+                    String.format("Account %s on %s is already connected", platformAccountId, command.platform())
                 );
             }
 
             // Create and save social account
             SocialAccount account = SocialAccount.builder()
-                .userId(userId)
-                .organizationId(organizationId)
-                .clientId(clientId)
-                .platform(platform)
+                .userId(command.userId())
+                .organizationId(command.organizationId())
+                .clientId(command.clientId())
+                .platform(command.platform())
                 .platformAccountId(platformAccountId)
                 .accountName(accountName)
                 .accountHandle(accountHandle)
                 .accountAvatarUrl(accountAvatarUrl)
                 .token(token)
-                .scopes(scopes)
+                .scopes(command.scopes())
                 .platformMetadata(accountInfo)
                 .active(true)
                 .createdAt(Instant.now())
@@ -101,14 +104,14 @@ public class ConnectSocialAccountUseCase {
 
             SocialAccount savedAccount = socialAccountPort.save(account);
 
-            log.info("Successfully connected social account: {} on platform: {}", platformAccountId, platform);
+            log.info("Successfully connected social account: {} on platform: {}", platformAccountId, command.platform());
 
             return savedAccount;
 
         } catch (OAuth2AuthenticationException | SocialAccountAlreadyConnectedException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Failed to connect social account for platform: {}", platform, e);
+            log.error("Failed to connect social account for platform: {}", command.platform(), e);
             throw new OAuth2AuthenticationException("Failed to connect social account: " + e.getMessage(), e);
         }
     }

@@ -51,10 +51,7 @@ public class BusinessOrganizationController {
         log.info("Inviting member {} to organization {}",
             request.getEmail(), request.getOrganizationId());
 
-        InviteMemberResponse response = inviteMemberUseCase.execute(
-            request,
-            userDetails.getId()
-        );
+        InviteMemberResponse response = inviteMemberUseCase.execute(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -74,10 +71,7 @@ public class BusinessOrganizationController {
         log.info("Creating member {} in organization {}",
             request.getEmail(), request.getOrganizationId());
 
-        UserDto user = createMemberDirectlyUseCase.execute(
-            request,
-            userDetails.getId()
-        );
+        UserDto user = createMemberDirectlyUseCase.execute(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
@@ -112,8 +106,7 @@ public class BusinessOrganizationController {
     @PreAuthorize("hasPermission('HIERARCHY', 'VIEW') && " +
                   "@permissionEvaluator.hasOrganizationScope(authentication, #organizationId)")
     public ResponseEntity<List<OrganizationHierarchyDto>> getHierarchy(
-        @PathVariable UUID organizationId,
-        @AuthenticationPrincipal CustomUserDetails userDetails
+        @PathVariable UUID organizationId
     ) {
         log.info("Getting hierarchy for organization {}", organizationId);
 
@@ -133,12 +126,12 @@ public class BusinessOrganizationController {
     public ResponseEntity<Void> updateMember(
         @PathVariable UUID organizationId,
         @PathVariable UUID memberId,
-        @Valid @RequestBody UpdateMemberRequest request,
-        @AuthenticationPrincipal CustomUserDetails userDetails
+        @Valid @RequestBody UpdateMemberRequest request
     ) {
         log.info("Updating member {} in organization {}", memberId, organizationId);
 
-        updateMemberUseCase.execute(memberId, request, userDetails.getId(), organizationId);
+        request.setMemberId(memberId);
+        updateMemberUseCase.execute(request);
 
         return ResponseEntity.noContent().build();
     }
@@ -153,12 +146,11 @@ public class BusinessOrganizationController {
     @PreAuthorize("hasPermission('MEMBER', 'REMOVE')")
     public ResponseEntity<Void> removeMember(
         @PathVariable UUID organizationId,
-        @PathVariable UUID memberId,
-        @AuthenticationPrincipal CustomUserDetails userDetails
+        @PathVariable UUID memberId
     ) {
         log.info("Removing member {} from organization {}", memberId, organizationId);
 
-        removeMemberUseCase.execute(memberId, userDetails.getId(), organizationId);
+        removeMemberUseCase.execute(memberId);
 
         return ResponseEntity.noContent().build();
     }
@@ -174,12 +166,12 @@ public class BusinessOrganizationController {
     public ResponseEntity<Void> updateMemberRole(
         @PathVariable UUID organizationId,
         @PathVariable UUID memberId,
-        @Valid @RequestBody UpdateMemberRoleRequest request,
-        @AuthenticationPrincipal CustomUserDetails userDetails
+        @Valid @RequestBody UpdateMemberRoleRequest request
     ) {
         log.info("Updating role for member {} in organization {}", memberId, organizationId);
 
-        updateMemberRoleUseCase.execute(memberId, request, userDetails.getId(), organizationId);
+        request.setMemberId(memberId);
+        updateMemberRoleUseCase.execute(request);
 
         return ResponseEntity.noContent().build();
     }
@@ -193,13 +185,12 @@ public class BusinessOrganizationController {
     @PostMapping("/permissions/grant")
     @PreAuthorize("hasPermission('PERMISSION', 'GRANT')")
     public ResponseEntity<Void> grantPermission(
-        @Valid @RequestBody GrantPermissionRequest request,
-        @AuthenticationPrincipal CustomUserDetails userDetails
+        @Valid @RequestBody GrantPermissionRequest request
     ) {
         log.info("Granting permission {} to user {} in organization {}",
             request.getPermissionId(), request.getUserId(), request.getOrganizationId());
 
-        grantPermissionOverrideUseCase.execute(request, userDetails.getId());
+        grantPermissionOverrideUseCase.execute(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -218,8 +209,7 @@ public class BusinessOrganizationController {
         @RequestParam(required = false) UUID userId,
         @RequestParam(required = false) String action,
         @RequestParam(required = false) Integer page,
-        @RequestParam(required = false) Integer size,
-        @AuthenticationPrincipal CustomUserDetails userDetails
+        @RequestParam(required = false) Integer size
     ) {
         log.info("Getting activity logs for organization {}", organizationId);
 

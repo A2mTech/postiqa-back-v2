@@ -108,7 +108,9 @@ public class InstagramActorOutputParser implements ActorOutputParser {
             mediaUrls,
             mediaType,
             metrics,
-            postUrl
+            postUrl,
+            List.of(),  // threadContent - empty for Instagram posts
+            Map.of()    // metadata - empty
         );
     }
 

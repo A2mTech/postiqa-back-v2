@@ -8,8 +8,8 @@ import fr.postiqa.database.repository.OrganizationRepository;
 import fr.postiqa.database.repository.RoleRepository;
 import fr.postiqa.database.repository.UserRepository;
 import fr.postiqa.database.repository.UserRoleRepository;
-import fr.postiqa.gateway.auth.service.ActivityLogService;
 import fr.postiqa.gateway.auth.service.OrganizationMemberService;
+import fr.postiqa.shared.annotation.UseCase;
 import fr.postiqa.shared.dto.auth.CreateMemberRequest;
 import fr.postiqa.shared.dto.auth.UserDto;
 import fr.postiqa.shared.exception.auth.OrganizationNotFoundException;
@@ -17,23 +17,26 @@ import fr.postiqa.shared.exception.auth.UserAlreadyExistsException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
  * Use case for creating a member directly without invitation.
  */
-@Component
+@UseCase(
+    value = "CreateMemberDirectly",
+    resourceType = "MEMBER",
+    description = "Creates a member directly without invitation"
+)
+@Service
 @RequiredArgsConstructor
 @Slf4j
-public class CreateMemberDirectlyUseCase {
+public class CreateMemberDirectlyUseCase implements fr.postiqa.shared.usecase.UseCase<CreateMemberRequest, UserDto> {
 
     private final OrganizationMemberService memberService;
-    private final ActivityLogService activityLogService;
     private final UserRepository userRepository;
     private final OrganizationRepository organizationRepository;
     private final RoleRepository roleRepository;
@@ -42,7 +45,9 @@ public class CreateMemberDirectlyUseCase {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public UserDto execute(CreateMemberRequest request, UUID createdByUserId) {
+    public UserDto execute(CreateMemberRequest request) {
+        // Get createdByUserId from tenant context
+        UUID createdByUserId = fr.postiqa.gateway.auth.authorization.TenantContextHolder.getUserId();
         // Validate organization exists
         var organization = organizationRepository.findById(request.getOrganizationId())
             .orElseThrow(() -> new OrganizationNotFoundException("Organization not found"));
@@ -93,24 +98,6 @@ public class CreateMemberDirectlyUseCase {
             .build();
 
         userRoleRepository.save(userRole);
-
-        // Log activity
-        activityLogService.logActivity(
-            createdByUserId,
-            request.getOrganizationId(),
-            request.getClientId(),
-            "MEMBER_CREATED",
-            "MEMBER",
-            member.getId(),
-            null,
-            null,
-            Map.of(
-                "email", request.getEmail(),
-                "role", role.getName(),
-                "position", request.getPosition() != null ? request.getPosition() : "",
-                "title", request.getTitle() != null ? request.getTitle() : ""
-            )
-        );
 
         log.info("Member created directly: {} in organization: {}",
             user.getEmail(), organization.getName());

@@ -8,36 +8,41 @@ import fr.postiqa.database.repository.OrganizationRepository;
 import fr.postiqa.database.repository.PermissionRepository;
 import fr.postiqa.database.repository.UserPermissionOverrideRepository;
 import fr.postiqa.database.repository.UserRepository;
-import fr.postiqa.gateway.auth.service.ActivityLogService;
+import fr.postiqa.shared.annotation.UseCase;
 import fr.postiqa.shared.dto.auth.GrantPermissionRequest;
 import fr.postiqa.shared.exception.auth.CannotModifySelfException;
 import fr.postiqa.shared.exception.auth.OrganizationNotFoundException;
 import fr.postiqa.shared.exception.auth.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
  * Use case for granting or revoking custom permissions to a user.
  */
-@Component
+@UseCase(
+    value = "GrantPermissionOverride",
+    resourceType = "PERMISSION_OVERRIDE",
+    description = "Grants or revokes custom permissions for a user"
+)
+@Service
 @RequiredArgsConstructor
 @Slf4j
-public class GrantPermissionOverrideUseCase {
+public class GrantPermissionOverrideUseCase implements fr.postiqa.shared.usecase.UseCase<GrantPermissionRequest, Void> {
 
     private final UserPermissionOverrideRepository permissionOverrideRepository;
     private final UserRepository userRepository;
     private final OrganizationRepository organizationRepository;
     private final PermissionRepository permissionRepository;
-    private final ActivityLogService activityLogService;
 
     @Transactional
-    public void execute(GrantPermissionRequest request, UUID grantedByUserId) {
+    public Void execute(GrantPermissionRequest request) {
+        // Get grantedByUserId from tenant context
+        UUID grantedByUserId = fr.postiqa.gateway.auth.authorization.TenantContextHolder.getUserId();
         // Prevent self-modification
         if (request.getUserId().equals(grantedByUserId)) {
             throw new CannotModifySelfException("Cannot modify your own permissions");
@@ -95,23 +100,6 @@ public class GrantPermissionOverrideUseCase {
 
         permissionOverrideRepository.save(override);
 
-        // Log activity
-        activityLogService.logActivity(
-            grantedByUserId,
-            request.getOrganizationId(),
-            null,
-            request.getGranted() ? "PERMISSION_GRANTED" : "PERMISSION_REVOKED",
-            "PERMISSION_OVERRIDE",
-            override.getId(),
-            null,
-            null,
-            Map.of(
-                "targetUserEmail", user.getEmail(),
-                "targetUserId", user.getId().toString(),
-                "permission", permission.getPermissionName(),
-                "granted", request.getGranted(),
-                "reason", request.getReason() != null ? request.getReason() : ""
-            )
-        );
+        return null;
     }
 }

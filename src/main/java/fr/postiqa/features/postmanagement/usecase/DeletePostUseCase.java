@@ -5,7 +5,7 @@ import fr.postiqa.features.postmanagement.domain.exception.UnauthorizedAccessExc
 import fr.postiqa.features.postmanagement.domain.model.Post;
 import fr.postiqa.features.postmanagement.domain.port.*;
 import fr.postiqa.features.postmanagement.domain.vo.PostId;
-import org.springframework.stereotype.Component;
+import fr.postiqa.shared.annotation.UseCase;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -14,8 +14,12 @@ import java.time.Instant;
  * Use case for deleting a post.
  * Deletes associated media from storage and publishes event.
  */
-@Component
-public class DeletePostUseCase {
+@UseCase(
+    value = "DeletePost",
+    resourceType = "POST",
+    description = "Deletes a social media post"
+)
+public class DeletePostUseCase implements fr.postiqa.shared.usecase.UseCase<DeletePostUseCase.DeletePostCommand, Void> {
 
     private final PostRepositoryPort postRepository;
     private final MediaStoragePort mediaStorage;
@@ -43,7 +47,7 @@ public class DeletePostUseCase {
      * Execute the delete post use case
      */
     @Transactional
-    public void execute(DeletePostCommand command) {
+    public Void execute(DeletePostCommand command) {
         // Get current tenant context
         TenantAccessPort.TenantContext tenant = tenantAccess.getCurrentTenant();
 
@@ -73,6 +77,8 @@ public class DeletePostUseCase {
             command.postId(),
             Instant.now()
         ));
+
+        return null;
     }
 
     private Post findPostWithAccess(PostId postId, TenantAccessPort.TenantContext tenant) {

@@ -7,7 +7,7 @@ import fr.postiqa.features.postmanagement.domain.port.PostEventPort;
 import fr.postiqa.features.postmanagement.domain.port.PostRepositoryPort;
 import fr.postiqa.features.postmanagement.domain.port.TenantAccessPort;
 import fr.postiqa.features.postmanagement.domain.vo.PostId;
-import org.springframework.stereotype.Component;
+import fr.postiqa.shared.annotation.UseCase;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -15,8 +15,12 @@ import java.time.Instant;
 /**
  * Use case for cancelling a scheduled post.
  */
-@Component
-public class CancelScheduleUseCase {
+@UseCase(
+    value = "CancelSchedule",
+    resourceType = "POST",
+    description = "Cancels a scheduled post"
+)
+public class CancelScheduleUseCase implements fr.postiqa.shared.usecase.UseCase<CancelScheduleUseCase.CancelScheduleCommand, Void> {
 
     private final PostRepositoryPort postRepository;
     private final TenantAccessPort tenantAccess;
@@ -41,7 +45,7 @@ public class CancelScheduleUseCase {
      * Execute the cancel schedule use case
      */
     @Transactional
-    public void execute(CancelScheduleCommand command) {
+    public Void execute(CancelScheduleCommand command) {
         // Get current tenant context
         TenantAccessPort.TenantContext tenant = tenantAccess.getCurrentTenant();
 
@@ -59,6 +63,8 @@ public class CancelScheduleUseCase {
             post.getId(),
             Instant.now()
         ));
+
+        return null;
     }
 
     private Post findPostWithAccess(PostId postId, TenantAccessPort.TenantContext tenant) {

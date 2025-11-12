@@ -4,29 +4,39 @@ import fr.postiqa.features.socialaccounts.domain.model.ConnectionTestResult;
 import fr.postiqa.features.socialaccounts.domain.model.SocialAccount;
 import fr.postiqa.features.socialaccounts.domain.port.SocialAccountPort;
 import fr.postiqa.features.socialaccounts.domain.port.SocialPlatformApiPort;
+import fr.postiqa.shared.annotation.UseCase;
 import fr.postiqa.shared.exception.socialaccount.SocialAccountNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
 /**
  * Use case for testing a social account connection.
  */
-@Component
+@UseCase(
+    value = "TestConnection",
+    resourceType = "SOCIAL_ACCOUNT",
+    description = "Tests a social account connection",
+    logActivity = false
+)
 @RequiredArgsConstructor
 @Slf4j
-public class TestConnectionUseCase {
+public class TestConnectionUseCase implements fr.postiqa.shared.usecase.UseCase<TestConnectionUseCase.TestConnectionCommand, ConnectionTestResult> {
 
     private final SocialAccountPort socialAccountPort;
     private final SocialPlatformApiPort platformApiPort;
 
-    public ConnectionTestResult execute(UUID accountId, UUID organizationId) {
-        log.info("Testing connection for social account: {}", accountId);
+    /**
+     * Command for testing connection
+     */
+    public record TestConnectionCommand(UUID accountId, UUID organizationId) {}
 
-        SocialAccount account = socialAccountPort.findByIdAndOrganizationId(accountId, organizationId)
-            .orElseThrow(() -> new SocialAccountNotFoundException("Social account not found: " + accountId));
+    public ConnectionTestResult execute(TestConnectionCommand command) {
+        log.info("Testing connection for social account: {}", command.accountId());
+
+        SocialAccount account = socialAccountPort.findByIdAndOrganizationId(command.accountId(), command.organizationId())
+            .orElseThrow(() -> new SocialAccountNotFoundException("Social account not found: " + command.accountId()));
 
         if (account.isTokenExpired()) {
             return ConnectionTestResult.failure(

@@ -1,6 +1,13 @@
 package fr.postiqa.agency.controller;
 
 import fr.postiqa.features.socialaccounts.usecase.*;
+import fr.postiqa.features.socialaccounts.usecase.GenerateAuthorizationUrlUseCase.GenerateAuthUrlCommand;
+import fr.postiqa.features.socialaccounts.usecase.ConnectSocialAccountUseCase.ConnectAccountCommand;
+import fr.postiqa.features.socialaccounts.usecase.ListSocialAccountsUseCase.ListAccountsCommand;
+import fr.postiqa.features.socialaccounts.usecase.GetSocialAccountUseCase.GetAccountCommand;
+import fr.postiqa.features.socialaccounts.usecase.DisconnectSocialAccountUseCase.DisconnectCommand;
+import fr.postiqa.features.socialaccounts.usecase.RefreshTokenUseCase.RefreshTokenCommand;
+import fr.postiqa.features.socialaccounts.usecase.TestConnectionUseCase.TestConnectionCommand;
 import fr.postiqa.features.socialaccounts.domain.model.ConnectionTestResult;
 import fr.postiqa.features.socialaccounts.domain.model.OAuth2AuthorizationUrl;
 import fr.postiqa.features.socialaccounts.domain.model.SocialAccount;
@@ -56,9 +63,7 @@ public class AgencySocialAccountController {
         String[] scopeArray = scopes.split(",");
 
         OAuth2AuthorizationUrl authUrl = generateAuthorizationUrlUseCase.execute(
-            platform,
-            redirectUri,
-            scopeArray
+            new GenerateAuthUrlCommand(platform, redirectUri, scopeArray)
         );
 
         OAuth2AuthorizationUrlResponse response = OAuth2AuthorizationUrlResponse.builder()
@@ -89,13 +94,15 @@ public class AgencySocialAccountController {
         verifyClientAccess(clientId, organizationId);
 
         SocialAccount account = connectSocialAccountUseCase.execute(
-            request.getPlatform(),
-            request.getCode(),
-            redirectUri,
-            userId,
-            organizationId,
-            clientId, // Agency manages for client
-            scopes
+            new ConnectAccountCommand(
+                request.getPlatform(),
+                request.getCode(),
+                redirectUri,
+                userId,
+                organizationId,
+                clientId, // Agency manages for client
+                scopes
+            )
         );
 
         SocialAccountDto accountDto = toDto(account);
@@ -123,7 +130,9 @@ public class AgencySocialAccountController {
         UUID organizationId = extractOrganizationId(userDetails);
         verifyClientAccess(clientId, organizationId);
 
-        List<SocialAccount> accounts = listSocialAccountsUseCase.executeForClient(clientId, activeOnly);
+        List<SocialAccount> accounts = listSocialAccountsUseCase.execute(
+            new ListAccountsCommand(null, clientId, activeOnly)
+        );
 
         List<SocialAccountDto> dtos = accounts.stream()
             .map(this::toDto)
@@ -144,7 +153,9 @@ public class AgencySocialAccountController {
 
         UUID organizationId = extractOrganizationId(userDetails);
 
-        List<SocialAccount> accounts = listSocialAccountsUseCase.executeForOrganization(organizationId, activeOnly);
+        List<SocialAccount> accounts = listSocialAccountsUseCase.execute(
+            new ListAccountsCommand(organizationId, null, activeOnly)
+        );
 
         List<SocialAccountDto> dtos = accounts.stream()
             .map(this::toDto)
@@ -165,7 +176,9 @@ public class AgencySocialAccountController {
 
         UUID organizationId = extractOrganizationId(userDetails);
 
-        SocialAccount account = getSocialAccountUseCase.execute(accountId, organizationId);
+        SocialAccount account = getSocialAccountUseCase.execute(
+            new GetAccountCommand(accountId, organizationId, null)
+        );
 
         return ResponseEntity.ok(toDto(account));
     }
@@ -182,7 +195,9 @@ public class AgencySocialAccountController {
 
         UUID organizationId = extractOrganizationId(userDetails);
 
-        disconnectSocialAccountUseCase.execute(accountId, organizationId);
+        disconnectSocialAccountUseCase.execute(
+            new DisconnectCommand(accountId, organizationId)
+        );
 
         return ResponseEntity.noContent().build();
     }
@@ -200,7 +215,9 @@ public class AgencySocialAccountController {
         UUID organizationId = extractOrganizationId(userDetails);
         verifyAccountAccess(accountId, organizationId);
 
-        SocialAccount account = refreshTokenUseCase.execute(accountId);
+        SocialAccount account = refreshTokenUseCase.execute(
+            new RefreshTokenCommand(accountId)
+        );
 
         RefreshTokenResponse response = RefreshTokenResponse.builder()
             .accountId(account.getId())
@@ -225,7 +242,9 @@ public class AgencySocialAccountController {
         UUID organizationId = extractOrganizationId(userDetails);
         verifyAccountAccess(accountId, organizationId);
 
-        ConnectionTestResult result = testConnectionUseCase.execute(accountId, organizationId);
+        ConnectionTestResult result = testConnectionUseCase.execute(
+            new TestConnectionCommand(accountId, organizationId)
+        );
 
         TestConnectionResponse response = TestConnectionResponse.builder()
             .accountId(accountId)
@@ -266,7 +285,9 @@ public class AgencySocialAccountController {
      * This is done by checking that the account belongs to the agency's organization.
      */
     private void verifyAccountAccess(UUID accountId, UUID organizationId) {
-        getSocialAccountUseCase.execute(accountId, organizationId);
+        getSocialAccountUseCase.execute(
+            new GetAccountCommand(accountId, organizationId, null)
+        );
     }
 
     private SocialAccountDto toDto(SocialAccount account) {

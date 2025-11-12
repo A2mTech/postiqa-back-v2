@@ -6,7 +6,13 @@
       "Bash(tree:*)",
       "Bash(find:*)",
       "Bash(./gradlew build:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(for file in /Users/amirdavies/Work/Projets/postiqa-org/postiqa-back-v2/src/main/java/fr/postiqa/core/usecase/{*.java,workflow/*.java})",
+      "Bash(do if grep -q \"^import org.springframework.stereotype.Component;\" \"$file\")",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(./gradlew test:*)",
+      "Bash(for file in /Users/amirdavies/Work/Projets/postiqa-org/postiqa-back-v2/src/main/java/fr/postiqa/core/infrastructure/workflow/ultradeep/step/analysis/*.java)"
     ],
     "deny": [],
     "ask": []

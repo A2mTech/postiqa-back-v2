@@ -8,7 +8,7 @@ import fr.postiqa.features.postmanagement.domain.port.PostRepositoryPort;
 import fr.postiqa.features.postmanagement.domain.port.TenantAccessPort;
 import fr.postiqa.features.postmanagement.domain.vo.ChannelAssignment;
 import fr.postiqa.features.postmanagement.domain.vo.PostId;
-import org.springframework.stereotype.Component;
+import fr.postiqa.shared.annotation.UseCase;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -16,8 +16,12 @@ import java.time.Instant;
 /**
  * Use case for scheduling a post for future publishing.
  */
-@Component
-public class SchedulePostUseCase {
+@UseCase(
+    value = "SchedulePost",
+    resourceType = "POST",
+    description = "Schedules a post for future publishing"
+)
+public class SchedulePostUseCase implements fr.postiqa.shared.usecase.UseCase<SchedulePostUseCase.SchedulePostCommand, Void> {
 
     private final PostRepositoryPort postRepository;
     private final TenantAccessPort tenantAccess;
@@ -54,7 +58,7 @@ public class SchedulePostUseCase {
      * Execute the schedule post use case
      */
     @Transactional
-    public void execute(SchedulePostCommand command) {
+    public Void execute(SchedulePostCommand command) {
         // Get current tenant context
         TenantAccessPort.TenantContext tenant = tenantAccess.getCurrentTenant();
 
@@ -73,6 +77,8 @@ public class SchedulePostUseCase {
             post.getChannelAssignments().stream().map(ChannelAssignment::channelId).toList(),
             command.scheduledFor()
         ));
+
+        return null;
     }
 
     private Post findPostWithAccess(PostId postId, TenantAccessPort.TenantContext tenant) {

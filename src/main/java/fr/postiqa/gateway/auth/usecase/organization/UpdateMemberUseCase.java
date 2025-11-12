@@ -2,13 +2,13 @@ package fr.postiqa.gateway.auth.usecase.organization;
 
 import fr.postiqa.database.entity.OrganizationMemberEntity;
 import fr.postiqa.database.repository.OrganizationMemberRepository;
-import fr.postiqa.gateway.auth.service.ActivityLogService;
 import fr.postiqa.gateway.auth.service.OrganizationMemberService;
+import fr.postiqa.shared.annotation.UseCase;
 import fr.postiqa.shared.dto.auth.UpdateMemberRequest;
 import fr.postiqa.shared.exception.auth.MemberNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
@@ -18,17 +18,25 @@ import java.util.UUID;
 /**
  * Use case for updating a member's information.
  */
-@Component
+@UseCase(
+    value = "UpdateMember",
+    resourceType = "MEMBER",
+    description = "Updates a member's information in the organization"
+)
+@Service
 @RequiredArgsConstructor
 @Slf4j
-public class UpdateMemberUseCase {
+public class UpdateMemberUseCase implements fr.postiqa.shared.usecase.UseCase<UpdateMemberRequest, Void> {
 
     private final OrganizationMemberService memberService;
     private final OrganizationMemberRepository memberRepository;
-    private final ActivityLogService activityLogService;
 
     @Transactional
-    public void execute(UUID memberId, UpdateMemberRequest request, UUID updatedByUserId, UUID organizationId) {
+    public Void execute(UpdateMemberRequest request) {
+        // Get context from tenant holder
+        UUID updatedByUserId = fr.postiqa.gateway.auth.authorization.TenantContextHolder.getUserId();
+        UUID organizationId = fr.postiqa.gateway.auth.authorization.TenantContextHolder.getOrganizationId();
+        UUID memberId = request.getMemberId();
         OrganizationMemberEntity member = memberRepository.findById(memberId)
             .orElseThrow(() -> new MemberNotFoundException("Member not found"));
 
@@ -73,22 +81,9 @@ public class UpdateMemberUseCase {
 
         // Log activity if there were changes
         if (!changes.isEmpty()) {
-            activityLogService.logActivity(
-                updatedByUserId,
-                organizationId,
-                null,
-                "MEMBER_UPDATED",
-                "MEMBER",
-                memberId,
-                null,
-                null,
-                Map.of(
-                    "userEmail", member.getUser().getEmail(),
-                    "changes", changes
-                )
-            );
-
             log.info("Updated member {}: {}", member.getUser().getEmail(), changes);
         }
+
+        return null;
     }
 }

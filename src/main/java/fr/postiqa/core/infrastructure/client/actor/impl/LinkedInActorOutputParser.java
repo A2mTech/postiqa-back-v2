@@ -168,7 +168,9 @@ public class LinkedInActorOutputParser implements ActorOutputParser {
             mediaUrls,
             mediaType,
             metrics,
-            getString(postData, "url")
+            getString(postData, "url"),
+            List.of(),  // threadContent - empty for LinkedIn posts
+            Map.of()    // metadata - empty
         );
     }
 

@@ -6,14 +6,19 @@ import fr.postiqa.features.postmanagement.domain.model.Post;
 import fr.postiqa.features.postmanagement.domain.port.PostRepositoryPort;
 import fr.postiqa.features.postmanagement.domain.port.TenantAccessPort;
 import fr.postiqa.features.postmanagement.domain.vo.PostId;
-import org.springframework.stereotype.Component;
+import fr.postiqa.shared.annotation.UseCase;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Use case for retrieving a single post by ID.
  */
-@Component
-public class GetPostUseCase {
+@UseCase(
+    value = "GetPost",
+    resourceType = "POST",
+    description = "Retrieves a single post by ID",
+    logActivity = false
+)
+public class GetPostUseCase implements fr.postiqa.shared.usecase.UseCase<GetPostUseCase.GetPostQuery, Post> {
 
     private final PostRepositoryPort postRepository;
     private final TenantAccessPort tenantAccess;

@@ -10,15 +10,19 @@ import fr.postiqa.features.postmanagement.domain.port.TenantAccessPort;
 import fr.postiqa.features.postmanagement.domain.vo.Media;
 import fr.postiqa.features.postmanagement.domain.vo.MediaId;
 import fr.postiqa.features.postmanagement.domain.vo.PostId;
+import fr.postiqa.shared.annotation.UseCase;
 import fr.postiqa.shared.enums.MediaType;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Use case for uploading media to a post.
  */
-@Component
-public class UploadMediaUseCase {
+@UseCase(
+    value = "UploadMedia",
+    resourceType = "MEDIA",
+    description = "Uploads media to a post"
+)
+public class UploadMediaUseCase implements fr.postiqa.shared.usecase.UseCase<UploadMediaUseCase.UploadMediaCommand, Media> {
 
     private final PostRepositoryPort postRepository;
     private final MediaStoragePort mediaStorage;

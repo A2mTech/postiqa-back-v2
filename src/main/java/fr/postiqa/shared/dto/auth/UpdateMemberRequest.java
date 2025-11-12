@@ -16,6 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class UpdateMemberRequest {
 
+    private UUID memberId;
     private UUID managerId;
     private String position;
     private String title;

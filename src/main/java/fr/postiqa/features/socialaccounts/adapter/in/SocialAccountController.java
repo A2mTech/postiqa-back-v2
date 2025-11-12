@@ -4,6 +4,13 @@ import fr.postiqa.features.socialaccounts.domain.model.ConnectionTestResult;
 import fr.postiqa.features.socialaccounts.domain.model.OAuth2AuthorizationUrl;
 import fr.postiqa.features.socialaccounts.domain.model.SocialAccount;
 import fr.postiqa.features.socialaccounts.usecase.*;
+import fr.postiqa.features.socialaccounts.usecase.GenerateAuthorizationUrlUseCase.GenerateAuthUrlCommand;
+import fr.postiqa.features.socialaccounts.usecase.ConnectSocialAccountUseCase.ConnectAccountCommand;
+import fr.postiqa.features.socialaccounts.usecase.ListSocialAccountsUseCase.ListAccountsCommand;
+import fr.postiqa.features.socialaccounts.usecase.GetSocialAccountUseCase.GetAccountCommand;
+import fr.postiqa.features.socialaccounts.usecase.DisconnectSocialAccountUseCase.DisconnectCommand;
+import fr.postiqa.features.socialaccounts.usecase.RefreshTokenUseCase.RefreshTokenCommand;
+import fr.postiqa.features.socialaccounts.usecase.TestConnectionUseCase.TestConnectionCommand;
 import fr.postiqa.shared.dto.socialaccount.*;
 import fr.postiqa.shared.enums.SocialPlatform;
 import jakarta.validation.Valid;
@@ -44,9 +51,7 @@ public class SocialAccountController {
         String[] scopeArray = scopes.split(",");
 
         OAuth2AuthorizationUrl authUrl = generateAuthorizationUrlUseCase.execute(
-            platform,
-            redirectUri,
-            scopeArray
+            new GenerateAuthUrlCommand(platform, redirectUri, scopeArray)
         );
 
         OAuth2AuthorizationUrlResponse response = OAuth2AuthorizationUrlResponse.builder()
@@ -69,13 +74,15 @@ public class SocialAccountController {
         @RequestParam(required = false) String scopes
     ) {
         SocialAccount account = connectSocialAccountUseCase.execute(
-            request.getPlatform(),
-            request.getCode(),
-            redirectUri,
-            userId,
-            organizationId,
-            clientId,
-            scopes
+            new ConnectAccountCommand(
+                request.getPlatform(),
+                request.getCode(),
+                redirectUri,
+                userId,
+                organizationId,
+                clientId,
+                scopes
+            )
         );
 
         SocialAccountDto accountDto = toDto(account);
@@ -94,13 +101,17 @@ public class SocialAccountController {
         @PathVariable UUID accountId,
         @RequestParam UUID organizationId
     ) {
-        disconnectSocialAccountUseCase.execute(accountId, organizationId);
+        disconnectSocialAccountUseCase.execute(
+            new DisconnectCommand(accountId, organizationId)
+        );
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/{accountId}/refresh")
     public ResponseEntity<RefreshTokenResponse> refreshToken(@PathVariable UUID accountId) {
-        SocialAccount account = refreshTokenUseCase.execute(accountId);
+        SocialAccount account = refreshTokenUseCase.execute(
+            new RefreshTokenCommand(accountId)
+        );
 
         RefreshTokenResponse response = RefreshTokenResponse.builder()
             .accountId(account.getId())
@@ -119,8 +130,8 @@ public class SocialAccountController {
         @RequestParam(required = false, defaultValue = "false") boolean activeOnly
     ) {
         List<SocialAccount> accounts = clientId != null
-            ? listSocialAccountsUseCase.executeForClient(clientId, activeOnly)
-            : listSocialAccountsUseCase.executeForOrganization(organizationId, activeOnly);
+            ? listSocialAccountsUseCase.execute(new ListAccountsCommand(null, clientId, activeOnly))
+            : listSocialAccountsUseCase.execute(new ListAccountsCommand(organizationId, null, activeOnly));
 
         List<SocialAccountDto> dtos = accounts.stream()
             .map(this::toDto)
@@ -136,8 +147,8 @@ public class SocialAccountController {
         @RequestParam(required = false) UUID clientId
     ) {
         SocialAccount account = clientId != null
-            ? getSocialAccountUseCase.executeForClient(accountId, clientId)
-            : getSocialAccountUseCase.execute(accountId, organizationId);
+            ? getSocialAccountUseCase.execute(new GetAccountCommand(accountId, null, clientId))
+            : getSocialAccountUseCase.execute(new GetAccountCommand(accountId, organizationId, null));
 
         return ResponseEntity.ok(toDto(account));
     }
@@ -147,7 +158,9 @@ public class SocialAccountController {
         @PathVariable UUID accountId,
         @RequestParam UUID organizationId
     ) {
-        ConnectionTestResult result = testConnectionUseCase.execute(accountId, organizationId);
+        ConnectionTestResult result = testConnectionUseCase.execute(
+            new TestConnectionCommand(accountId, organizationId)
+        );
 
         TestConnectionResponse response = TestConnectionResponse.builder()
             .accountId(accountId)

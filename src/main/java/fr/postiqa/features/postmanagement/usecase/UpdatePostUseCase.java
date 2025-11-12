@@ -9,7 +9,7 @@ import fr.postiqa.features.postmanagement.domain.port.*;
 import fr.postiqa.features.postmanagement.domain.vo.ChannelId;
 import fr.postiqa.features.postmanagement.domain.vo.Content;
 import fr.postiqa.features.postmanagement.domain.vo.PostId;
-import org.springframework.stereotype.Component;
+import fr.postiqa.shared.annotation.UseCase;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
@@ -20,8 +20,12 @@ import java.util.Set;
  * Use case for updating an existing post.
  * Only allows updating draft or scheduled posts.
  */
-@Component
-public class UpdatePostUseCase {
+@UseCase(
+    value = "UpdatePost",
+    resourceType = "POST",
+    description = "Updates an existing social media post"
+)
+public class UpdatePostUseCase implements fr.postiqa.shared.usecase.UseCase<UpdatePostUseCase.UpdatePostCommand, Void> {
 
     private final PostRepositoryPort postRepository;
     private final ChannelRepositoryPort channelRepository;
@@ -50,7 +54,7 @@ public class UpdatePostUseCase {
      * Execute the update post use case
      */
     @Transactional
-    public void execute(UpdatePostCommand command) {
+    public Void execute(UpdatePostCommand command) {
         // Get current tenant context
         TenantAccessPort.TenantContext tenant = tenantAccess.getCurrentTenant();
 
@@ -70,6 +74,8 @@ public class UpdatePostUseCase {
 
         // Save post
         postRepository.save(post);
+
+        return null;
     }
 
     private Post findPostWithAccess(PostId postId, TenantAccessPort.TenantContext tenant) {

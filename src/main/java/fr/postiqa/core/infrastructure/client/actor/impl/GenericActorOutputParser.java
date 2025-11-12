@@ -68,7 +68,9 @@ public class GenericActorOutputParser implements ActorOutputParser {
             parseMediaUrls(item),
             parseMediaType(item),
             parsePostMetrics(item),
-            getStringValue(item, "postUrl", "url", "link")
+            getStringValue(item, "postUrl", "url", "link"),
+            List.of(),  // threadContent - empty for generic posts
+            Map.of()    // metadata - empty
         );
     }
 

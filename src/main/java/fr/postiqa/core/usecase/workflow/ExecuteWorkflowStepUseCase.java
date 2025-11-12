@@ -15,6 +15,11 @@ import java.util.concurrent.CompletableFuture;
  * Use case for executing an individual workflow step.
  * Useful for testing steps in isolation or custom step execution logic.
  */
+@fr.postiqa.shared.annotation.UseCase(
+    value = "ExecuteWorkflowStep",
+    resourceType = "WORKFLOW_STEP",
+    description = "Executes individual workflow step"
+)
 @Service
 @RequiredArgsConstructor
 @Slf4j

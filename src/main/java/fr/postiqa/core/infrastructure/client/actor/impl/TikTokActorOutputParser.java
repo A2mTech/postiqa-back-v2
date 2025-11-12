@@ -145,7 +145,9 @@ public class TikTokActorOutputParser implements ActorOutputParser {
             mediaUrls,
             SocialPost.MediaType.VIDEO, // TikTok is primarily video
             metrics,
-            videoUrl
+            videoUrl,
+            List.of(),  // threadContent - empty for TikTok videos
+            Map.of()    // metadata - empty
         );
     }
 

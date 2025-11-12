@@ -4,7 +4,6 @@ import fr.postiqa.core.domain.enums.SocialPlatform;
 import fr.postiqa.core.domain.model.SocialPost;
 import fr.postiqa.core.domain.port.AnalysisPort;
 import fr.postiqa.core.domain.port.ScrapingPort;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 
@@ -13,7 +12,11 @@ import java.util.List;
  * <p>
  * Orchestre le scraping des posts et l'analyse pour créer le profil d'écriture.
  */
-@Component
+@fr.postiqa.shared.annotation.UseCase(
+    value = "AnalyzeUserProfile",
+    resourceType = "USER_PROFILE",
+    description = "Analyzes user writing style from social media posts"
+)
 public class AnalyzeUserProfileUseCase {
 
     private final ScrapingPort scrapingPort;

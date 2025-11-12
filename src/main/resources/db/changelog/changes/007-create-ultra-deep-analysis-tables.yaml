@@ -1,0 +1,792 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-create-user-profile-analyses-table
+      author: postiqa-system
+      changes:
+        - createTable:
+            tableName: user_profile_analyses
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: organization_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: client_id
+                  type: UUID
+              - column:
+                  name: workflow_instance_id
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: VARCHAR(50)
+                  defaultValue: 'PENDING'
+                  constraints:
+                    nullable: false
+              - column:
+                  name: site_url
+                  type: VARCHAR(500)
+              - column:
+                  name: platforms
+                  type: JSONB
+                  remarks: "List of social platforms to analyze"
+              - column:
+                  name: final_profile
+                  type: JSONB
+                  remarks: "Final unified profile for content generation"
+              - column:
+                  name: error_message
+                  type: TEXT
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: started_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: completed_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: version
+                  type: BIGINT
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
+                  remarks: "Optimistic locking version"
+
+        - addForeignKeyConstraint:
+            baseTableName: user_profile_analyses
+            baseColumnNames: organization_id
+            referencedTableName: organizations
+            referencedColumnNames: id
+            constraintName: fk_user_profile_analysis_organization
+            onDelete: CASCADE
+
+        - addForeignKeyConstraint:
+            baseTableName: user_profile_analyses
+            baseColumnNames: client_id
+            referencedTableName: clients
+            referencedColumnNames: id
+            constraintName: fk_user_profile_analysis_client
+            onDelete: CASCADE
+
+        - createIndex:
+            indexName: idx_user_profile_analyses_user_id
+            tableName: user_profile_analyses
+            columns:
+              - column:
+                  name: user_id
+
+        - createIndex:
+            indexName: idx_user_profile_analyses_organization_id
+            tableName: user_profile_analyses
+            columns:
+              - column:
+                  name: organization_id
+
+        - createIndex:
+            indexName: idx_user_profile_analyses_client_id
+            tableName: user_profile_analyses
+            columns:
+              - column:
+                  name: client_id
+
+        - createIndex:
+            indexName: idx_user_profile_analyses_workflow_instance_id
+            tableName: user_profile_analyses
+            columns:
+              - column:
+                  name: workflow_instance_id
+
+        - createIndex:
+            indexName: idx_user_profile_analyses_status
+            tableName: user_profile_analyses
+            columns:
+              - column:
+                  name: status
+
+        - createIndex:
+            indexName: idx_user_profile_analyses_created_at
+            tableName: user_profile_analyses
+            columns:
+              - column:
+                  name: created_at
+
+  - changeSet:
+      id: 007-create-site-analyses-table
+      author: postiqa-system
+      changes:
+        - createTable:
+            tableName: site_analyses
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_profile_analysis_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: site_url
+                  type: VARCHAR(500)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_pages
+                  type: INTEGER
+                  constraints:
+                    nullable: false
+              - column:
+                  name: business_identity
+                  type: JSONB
+                  remarks: "Business name, tagline, value proposition, elevator pitch"
+              - column:
+                  name: product_service
+                  type: JSONB
+                  remarks: "Product/service type, category, description, features, use cases"
+              - column:
+                  name: target_audience
+                  type: JSONB
+                  remarks: "Primary/secondary audience, industries, company size"
+              - column:
+                  name: business_model
+                  type: JSONB
+                  remarks: "Monetization model, pricing detection"
+              - column:
+                  name: stage
+                  type: JSONB
+                  remarks: "Product stage, signals, estimated age"
+              - column:
+                  name: brand_identity
+                  type: JSONB
+                  remarks: "Tone, colors detected, visual style"
+              - column:
+                  name: social_proof
+                  type: JSONB
+                  remarks: "Testimonials, case studies, client logos, stats, trust signals"
+              - column:
+                  name: content_strategy
+                  type: JSONB
+                  remarks: "Blog presence, topics, content types, posting frequency"
+              - column:
+                  name: ctas_analysis
+                  type: JSONB
+                  remarks: "Primary CTA, secondary CTAs, conversion focus"
+              - column:
+                  name: technical_stack
+                  type: JSONB
+                  remarks: "Analytics, marketing tools, hosting signals"
+              - column:
+                  name: raw_data
+                  type: JSONB
+                  remarks: "Raw scraped website data"
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: site_analyses
+            baseColumnNames: user_profile_analysis_id
+            referencedTableName: user_profile_analyses
+            referencedColumnNames: id
+            constraintName: fk_site_analysis_user_profile_analysis
+            onDelete: CASCADE
+
+        - createIndex:
+            indexName: idx_site_analyses_user_profile_analysis_id
+            tableName: site_analyses
+            columns:
+              - column:
+                  name: user_profile_analysis_id
+
+        - createIndex:
+            indexName: idx_site_analyses_created_at
+            tableName: site_analyses
+            columns:
+              - column:
+                  name: created_at
+
+  - changeSet:
+      id: 007-create-platform-profile-analyses-table
+      author: postiqa-system
+      changes:
+        - createTable:
+            tableName: platform_profile_analyses
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_profile_analysis_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: platform
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: profile_url
+                  type: VARCHAR(500)
+              - column:
+                  name: username
+                  type: VARCHAR(255)
+              - column:
+                  name: display_name
+                  type: VARCHAR(255)
+              - column:
+                  name: bio
+                  type: TEXT
+              - column:
+                  name: follower_count
+                  type: INTEGER
+              - column:
+                  name: following_count
+                  type: INTEGER
+              - column:
+                  name: profile_picture_analysis
+                  type: JSONB
+                  remarks: "Vision analysis of profile picture (type, description, colors, style)"
+              - column:
+                  name: banner_analysis
+                  type: JSONB
+                  remarks: "Vision analysis of banner (text overlay, imagery, brand consistency)"
+              - column:
+                  name: bio_analysis
+                  type: JSONB
+                  remarks: "Text analysis of bio (clarity score, keywords, tone, optimization)"
+              - column:
+                  name: raw_profile_data
+                  type: JSONB
+                  remarks: "Raw scraped profile data"
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: platform_profile_analyses
+            baseColumnNames: user_profile_analysis_id
+            referencedTableName: user_profile_analyses
+            referencedColumnNames: id
+            constraintName: fk_platform_profile_analysis_user_profile_analysis
+            onDelete: CASCADE
+
+        - createIndex:
+            indexName: idx_platform_profile_analyses_user_profile_analysis_id
+            tableName: platform_profile_analyses
+            columns:
+              - column:
+                  name: user_profile_analysis_id
+
+        - createIndex:
+            indexName: idx_platform_profile_analyses_platform
+            tableName: platform_profile_analyses
+            columns:
+              - column:
+                  name: platform
+
+        - createIndex:
+            indexName: idx_platform_profile_analyses_created_at
+            tableName: platform_profile_analyses
+            columns:
+              - column:
+                  name: created_at
+
+  - changeSet:
+      id: 007-create-post-analyses-table
+      author: postiqa-system
+      changes:
+        - createTable:
+            tableName: post_analyses
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: platform_profile_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: post_id
+                  type: VARCHAR(255)
+              - column:
+                  name: post_url
+                  type: VARCHAR(500)
+              - column:
+                  name: post_type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+                  remarks: "text, image, carousel, video, thread"
+              - column:
+                  name: text_content
+                  type: TEXT
+              - column:
+                  name: published_at
+                  type: TIMESTAMP WITH TIME ZONE
+              - column:
+                  name: engagement
+                  type: JSONB
+                  remarks: "Likes, comments, shares, views"
+              - column:
+                  name: content_analysis
+                  type: JSONB
+                  remarks: "Main topic, subtopics, intent, message clarity"
+              - column:
+                  name: structure_analysis
+                  type: JSONB
+                  remarks: "Hook, body, CTA structure analysis"
+              - column:
+                  name: writing_style
+                  type: JSONB
+                  remarks: "Tone, voice, reading level, emotional appeal"
+              - column:
+                  name: formatting
+                  type: JSONB
+                  remarks: "Emoji usage, line breaks, emphasis"
+              - column:
+                  name: content_elements
+                  type: JSONB
+                  remarks: "Hashtags, mentions, links"
+              - column:
+                  name: engagement_analysis
+                  type: JSONB
+                  remarks: "Engagement rate, performance, success factors"
+              - column:
+                  name: brand_alignment
+                  type: JSONB
+                  remarks: "Brand tone match, product promotion, thought leadership"
+              - column:
+                  name: visual_analysis
+                  type: JSONB
+                  remarks: "For image/carousel/video posts - visual content analysis"
+              - column:
+                  name: carousel_analysis
+                  type: JSONB
+                  remarks: "For carousel posts - multi-slide narrative flow analysis"
+              - column:
+                  name: video_analysis
+                  type: JSONB
+                  remarks: "For video posts - transcription, frames, narrative structure"
+              - column:
+                  name: thread_analysis
+                  type: JSONB
+                  remarks: "For threads - multi-tweet structure and coherence"
+              - column:
+                  name: replicability_insights
+                  type: JSONB
+                  remarks: "Hook pattern, structure template, tone instructions"
+              - column:
+                  name: raw_post_data
+                  type: JSONB
+                  remarks: "Raw scraped post data"
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: post_analyses
+            baseColumnNames: platform_profile_id
+            referencedTableName: platform_profile_analyses
+            referencedColumnNames: id
+            constraintName: fk_post_analysis_platform_profile
+            onDelete: CASCADE
+
+        - createIndex:
+            indexName: idx_post_analyses_platform_profile_id
+            tableName: post_analyses
+            columns:
+              - column:
+                  name: platform_profile_id
+
+        - createIndex:
+            indexName: idx_post_analyses_post_type
+            tableName: post_analyses
+            columns:
+              - column:
+                  name: post_type
+
+        - createIndex:
+            indexName: idx_post_analyses_published_at
+            tableName: post_analyses
+            columns:
+              - column:
+                  name: published_at
+
+        - createIndex:
+            indexName: idx_post_analyses_created_at
+            tableName: post_analyses
+            columns:
+              - column:
+                  name: created_at
+
+  - changeSet:
+      id: 007-create-platform-summaries-table
+      author: postiqa-system
+      changes:
+        - createTable:
+            tableName: platform_summaries
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_profile_analysis_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: platform
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_posts_analyzed
+                  type: INTEGER
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: profile_quality
+                  type: JSONB
+                  remarks: "Overall score, strengths, weaknesses, optimization opportunities"
+              - column:
+                  name: content_patterns
+                  type: JSONB
+                  remarks: "Posting frequency, content mix, performance insights"
+              - column:
+                  name: writing_style_profile
+                  type: JSONB
+                  remarks: "Dominant tone, voice, signature elements"
+              - column:
+                  name: brand_alignment
+                  type: JSONB
+                  remarks: "Consistency with business, thought leadership"
+              - column:
+                  name: audience_engagement
+                  type: JSONB
+                  remarks: "Engagement quality, community building"
+              - column:
+                  name: competitive_positioning
+                  type: JSONB
+                  remarks: "Content differentiation, value proposition clarity"
+              - column:
+                  name: recommendations
+                  type: JSONB
+                  remarks: "Content strategy, posting optimization, engagement tactics"
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: platform_summaries
+            baseColumnNames: user_profile_analysis_id
+            referencedTableName: user_profile_analyses
+            referencedColumnNames: id
+            constraintName: fk_platform_summary_user_profile_analysis
+            onDelete: CASCADE
+
+        - createIndex:
+            indexName: idx_platform_summaries_user_profile_analysis_id
+            tableName: platform_summaries
+            columns:
+              - column:
+                  name: user_profile_analysis_id
+
+        - createIndex:
+            indexName: idx_platform_summaries_platform
+            tableName: platform_summaries
+            columns:
+              - column:
+                  name: platform
+
+        - createIndex:
+            indexName: idx_platform_summaries_created_at
+            tableName: platform_summaries
+            columns:
+              - column:
+                  name: created_at
+
+  - changeSet:
+      id: 007-create-cross-reference-analyses-table
+      author: postiqa-system
+      changes:
+        - createTable:
+            tableName: cross_reference_analyses
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_profile_analysis_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: identity
+                  type: JSONB
+                  remarks: "Name, professional title, expertise"
+              - column:
+                  name: business_presence
+                  type: JSONB
+                  remarks: "Business type, value prop, target audience"
+              - column:
+                  name: personal_brand
+                  type: JSONB
+                  remarks: "Positioning, consistency, maturity"
+              - column:
+                  name: content_dna
+                  type: JSONB
+                  remarks: "Unified voice, themes, formats, authenticity"
+              - column:
+                  name: cross_platform_insights
+                  type: JSONB
+                  remarks: "Platform strategies, repurposing patterns"
+              - column:
+                  name: audience_relationship
+                  type: JSONB
+                  remarks: "Engagement style, community building"
+              - column:
+                  name: growth_trajectory
+                  type: JSONB
+                  remarks: "Content evolution, consistency, quality progression"
+              - column:
+                  name: strengths
+                  type: JSONB
+              - column:
+                  name: weaknesses
+                  type: JSONB
+              - column:
+                  name: opportunities
+                  type: JSONB
+              - column:
+                  name: strategic_recommendations
+                  type: JSONB
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: cross_reference_analyses
+            baseColumnNames: user_profile_analysis_id
+            referencedTableName: user_profile_analyses
+            referencedColumnNames: id
+            constraintName: fk_cross_reference_analysis_user_profile_analysis
+            onDelete: CASCADE
+
+        - createIndex:
+            indexName: idx_cross_reference_analyses_user_profile_analysis_id
+            tableName: cross_reference_analyses
+            columns:
+              - column:
+                  name: user_profile_analysis_id
+
+        - createIndex:
+            indexName: idx_cross_reference_analyses_created_at
+            tableName: cross_reference_analyses
+            columns:
+              - column:
+                  name: created_at
+
+  - changeSet:
+      id: 007-create-scoring-insights-table
+      author: postiqa-system
+      changes:
+        - createTable:
+            tableName: scoring_insights
+            columns:
+              - column:
+                  name: id
+                  type: UUID
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: user_profile_analysis_id
+                  type: UUID
+                  constraints:
+                    nullable: false
+              - column:
+                  name: overall_content_quality_score
+                  type: INTEGER
+                  remarks: "Score 1-10"
+              - column:
+                  name: brand_consistency_score
+                  type: INTEGER
+                  remarks: "Score 1-10"
+              - column:
+                  name: engagement_effectiveness_score
+                  type: INTEGER
+                  remarks: "Score 1-10"
+              - column:
+                  name: thought_leadership_score
+                  type: INTEGER
+                  remarks: "Score 1-10"
+              - column:
+                  name: authenticity_score
+                  type: INTEGER
+                  remarks: "Score 1-10"
+              - column:
+                  name: visual_branding_score
+                  type: INTEGER
+                  remarks: "Score 1-10"
+              - column:
+                  name: posting_consistency_score
+                  type: INTEGER
+                  remarks: "Score 1-10"
+              - column:
+                  name: audience_building_score
+                  type: INTEGER
+                  remarks: "Score 1-10"
+              - column:
+                  name: conversion_optimization_score
+                  type: INTEGER
+                  remarks: "Score 1-10"
+              - column:
+                  name: innovation_score
+                  type: INTEGER
+                  remarks: "Score 1-10"
+              - column:
+                  name: all_scores
+                  type: JSONB
+                  remarks: "All scores in a map for easy access"
+              - column:
+                  name: benchmarking
+                  type: JSONB
+                  remarks: "Content maturity level, percentile, assessment"
+              - column:
+                  name: actionable_insights
+                  type: JSONB
+                  remarks: "List of prioritized insights with impact/effort"
+              - column:
+                  name: content_opportunities
+                  type: JSONB
+                  remarks: "Specific opportunities per platform"
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: scoring_insights
+            baseColumnNames: user_profile_analysis_id
+            referencedTableName: user_profile_analyses
+            referencedColumnNames: id
+            constraintName: fk_scoring_insights_user_profile_analysis
+            onDelete: CASCADE
+
+        - createIndex:
+            indexName: idx_scoring_insights_user_profile_analysis_id
+            tableName: scoring_insights
+            columns:
+              - column:
+                  name: user_profile_analysis_id
+
+        - createIndex:
+            indexName: idx_scoring_insights_overall_score
+            tableName: scoring_insights
+            columns:
+              - column:
+                  name: overall_content_quality_score
+
+        - createIndex:
+            indexName: idx_scoring_insights_created_at
+            tableName: scoring_insights
+            columns:
+              - column:
+                  name: created_at
+
+      rollback:
+        - dropTable:
+            tableName: scoring_insights
+        - dropTable:
+            tableName: cross_reference_analyses
+        - dropTable:
+            tableName: platform_summaries
+        - dropTable:
+            tableName: post_analyses
+        - dropTable:
+            tableName: platform_profile_analyses
+        - dropTable:
+            tableName: site_analyses
+        - dropTable:
+            tableName: user_profile_analyses

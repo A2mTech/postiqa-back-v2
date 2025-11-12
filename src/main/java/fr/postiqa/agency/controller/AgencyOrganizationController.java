@@ -59,10 +59,7 @@ public class AgencyOrganizationController {
             throw new SecurityException("You don't have access to this client");
         }
 
-        InviteMemberResponse response = inviteMemberUseCase.execute(
-            request,
-            userDetails.getId()
-        );
+        InviteMemberResponse response = inviteMemberUseCase.execute(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -83,10 +80,7 @@ public class AgencyOrganizationController {
         log.info("Agency creating member {} in organization {} (client: {})",
             request.getEmail(), request.getOrganizationId(), request.getClientId());
 
-        UserDto user = createMemberDirectlyUseCase.execute(
-            request,
-            userDetails.getId()
-        );
+        UserDto user = createMemberDirectlyUseCase.execute(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(user);
     }
@@ -150,7 +144,8 @@ public class AgencyOrganizationController {
     ) {
         log.info("Updating agency member {} in organization {}", memberId, organizationId);
 
-        updateMemberUseCase.execute(memberId, request, userDetails.getId(), organizationId);
+        request.setMemberId(memberId);
+        updateMemberUseCase.execute(request);
 
         return ResponseEntity.noContent().build();
     }
@@ -170,7 +165,7 @@ public class AgencyOrganizationController {
     ) {
         log.info("Removing agency member {} from organization {}", memberId, organizationId);
 
-        removeMemberUseCase.execute(memberId, userDetails.getId(), organizationId);
+        removeMemberUseCase.execute(memberId);
 
         return ResponseEntity.noContent().build();
     }
@@ -192,7 +187,8 @@ public class AgencyOrganizationController {
         log.info("Updating role for agency member {} in organization {} (new client scope: {})",
             memberId, organizationId, request.getClientId());
 
-        updateMemberRoleUseCase.execute(memberId, request, userDetails.getId(), organizationId);
+        request.setMemberId(memberId);
+        updateMemberRoleUseCase.execute(request);
 
         return ResponseEntity.noContent().build();
     }
@@ -236,7 +232,7 @@ public class AgencyOrganizationController {
         log.info("Agency granting permission {} to user {} in organization {}",
             request.getPermissionId(), request.getUserId(), request.getOrganizationId());
 
-        grantPermissionOverrideUseCase.execute(request, userDetails.getId());
+        grantPermissionOverrideUseCase.execute(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }

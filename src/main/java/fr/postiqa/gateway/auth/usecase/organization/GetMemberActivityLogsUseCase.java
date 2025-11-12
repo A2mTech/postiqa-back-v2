@@ -2,6 +2,7 @@ package fr.postiqa.gateway.auth.usecase.organization;
 
 import fr.postiqa.database.entity.ActivityLogEntity;
 import fr.postiqa.gateway.auth.service.ActivityLogService;
+import fr.postiqa.shared.annotation.UseCase;
 import fr.postiqa.shared.dto.auth.ActivityLogDto;
 import fr.postiqa.shared.dto.auth.ActivityLogFilterRequest;
 import fr.postiqa.shared.dto.auth.ClientDto;
@@ -13,16 +14,22 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Use case for getting activity logs with filters.
  */
-@Component
+@UseCase(
+    value = "GetMemberActivityLogs",
+    resourceType = "ACTIVITY_LOG",
+    description = "Retrieves activity logs for organization members",
+    logActivity = false
+)
+@Service
 @RequiredArgsConstructor
 @Slf4j
-public class GetMemberActivityLogsUseCase {
+public class GetMemberActivityLogsUseCase implements fr.postiqa.shared.usecase.UseCase<ActivityLogFilterRequest, Page<ActivityLogDto>> {
 
     private final ActivityLogService activityLogService;
 

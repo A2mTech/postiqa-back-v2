@@ -2,6 +2,7 @@ package fr.postiqa.features.socialaccounts.infrastructure.scheduler;
 
 import fr.postiqa.features.socialaccounts.domain.model.SocialAccount;
 import fr.postiqa.features.socialaccounts.usecase.RefreshTokenUseCase;
+import fr.postiqa.features.socialaccounts.usecase.RefreshTokenUseCase.RefreshTokenCommand;
 import fr.postiqa.features.socialaccounts.domain.port.SocialAccountPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,7 +57,7 @@ public class TokenRefreshScheduler {
                 }
 
                 try {
-                    refreshTokenUseCase.execute(account.getId());
+                    refreshTokenUseCase.execute(new RefreshTokenCommand(account.getId()));
                     successCount++;
                     log.info("Successfully refreshed token for account {} ({})",
                         account.getId(), account.getPlatform());
@@ -97,7 +98,7 @@ public class TokenRefreshScheduler {
                 // Try to refresh if refresh token is available
                 if (account.getToken() != null && account.getToken().hasRefreshToken()) {
                     try {
-                        refreshTokenUseCase.execute(account.getId());
+                        refreshTokenUseCase.execute(new RefreshTokenCommand(account.getId()));
                         log.info("Successfully refreshed expired token for account {} ({})",
                             account.getId(), account.getPlatform());
                         continue;

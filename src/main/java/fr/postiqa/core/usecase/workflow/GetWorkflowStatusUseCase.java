@@ -12,6 +12,12 @@ import java.util.Optional;
  * Use case for retrieving workflow status and state.
  * Provides read-only access to workflow instances.
  */
+@fr.postiqa.shared.annotation.UseCase(
+    value = "GetWorkflowStatus",
+    resourceType = "WORKFLOW",
+    description = "Retrieves workflow execution status and state",
+    logActivity = false  // Read-only query operation
+)
 @Service
 @RequiredArgsConstructor
 @Slf4j

@@ -1,6 +1,13 @@
 package fr.postiqa.business.controller;
 
 import fr.postiqa.features.socialaccounts.usecase.*;
+import fr.postiqa.features.socialaccounts.usecase.GenerateAuthorizationUrlUseCase.GenerateAuthUrlCommand;
+import fr.postiqa.features.socialaccounts.usecase.ConnectSocialAccountUseCase.ConnectAccountCommand;
+import fr.postiqa.features.socialaccounts.usecase.ListSocialAccountsUseCase.ListAccountsCommand;
+import fr.postiqa.features.socialaccounts.usecase.GetSocialAccountUseCase.GetAccountCommand;
+import fr.postiqa.features.socialaccounts.usecase.DisconnectSocialAccountUseCase.DisconnectCommand;
+import fr.postiqa.features.socialaccounts.usecase.RefreshTokenUseCase.RefreshTokenCommand;
+import fr.postiqa.features.socialaccounts.usecase.TestConnectionUseCase.TestConnectionCommand;
 import fr.postiqa.features.socialaccounts.domain.model.ConnectionTestResult;
 import fr.postiqa.features.socialaccounts.domain.model.OAuth2AuthorizationUrl;
 import fr.postiqa.features.socialaccounts.domain.model.SocialAccount;
@@ -51,9 +58,7 @@ public class BusinessSocialAccountController {
         String[] scopeArray = scopes.split(",");
 
         OAuth2AuthorizationUrl authUrl = generateAuthorizationUrlUseCase.execute(
-            platform,
-            redirectUri,
-            scopeArray
+            new GenerateAuthUrlCommand(platform, redirectUri, scopeArray)
         );
 
         OAuth2AuthorizationUrlResponse response = OAuth2AuthorizationUrlResponse.builder()
@@ -82,13 +87,15 @@ public class BusinessSocialAccountController {
         UUID organizationId = extractOrganizationId(userDetails);
 
         SocialAccount account = connectSocialAccountUseCase.execute(
-            request.getPlatform(),
-            request.getCode(),
-            redirectUri,
-            userId,
-            organizationId,
-            null, // No client for business
-            scopes
+            new ConnectAccountCommand(
+                request.getPlatform(),
+                request.getCode(),
+                redirectUri,
+                userId,
+                organizationId,
+                null, // No client for business
+                scopes
+            )
         );
 
         SocialAccountDto accountDto = toDto(account);
@@ -112,7 +119,9 @@ public class BusinessSocialAccountController {
     ) {
         UUID organizationId = extractOrganizationId(userDetails);
 
-        List<SocialAccount> accounts = listSocialAccountsUseCase.executeForOrganization(organizationId, activeOnly);
+        List<SocialAccount> accounts = listSocialAccountsUseCase.execute(
+            new ListAccountsCommand(organizationId, null, activeOnly)
+        );
 
         List<SocialAccountDto> dtos = accounts.stream()
             .map(this::toDto)
@@ -131,7 +140,9 @@ public class BusinessSocialAccountController {
     ) {
         UUID organizationId = extractOrganizationId(userDetails);
 
-        SocialAccount account = getSocialAccountUseCase.execute(accountId, organizationId);
+        SocialAccount account = getSocialAccountUseCase.execute(
+            new GetAccountCommand(accountId, organizationId, null)
+        );
 
         return ResponseEntity.ok(toDto(account));
     }
@@ -148,7 +159,9 @@ public class BusinessSocialAccountController {
 
         UUID organizationId = extractOrganizationId(userDetails);
 
-        disconnectSocialAccountUseCase.execute(accountId, organizationId);
+        disconnectSocialAccountUseCase.execute(
+            new DisconnectCommand(accountId, organizationId)
+        );
 
         return ResponseEntity.noContent().build();
     }
@@ -160,7 +173,9 @@ public class BusinessSocialAccountController {
     public ResponseEntity<RefreshTokenResponse> refreshToken(@PathVariable UUID accountId) {
         log.info("Refreshing token for account: {}", accountId);
 
-        SocialAccount account = refreshTokenUseCase.execute(accountId);
+        SocialAccount account = refreshTokenUseCase.execute(
+            new RefreshTokenCommand(accountId)
+        );
 
         RefreshTokenResponse response = RefreshTokenResponse.builder()
             .accountId(account.getId())
@@ -184,7 +199,9 @@ public class BusinessSocialAccountController {
 
         UUID organizationId = extractOrganizationId(userDetails);
 
-        ConnectionTestResult result = testConnectionUseCase.execute(accountId, organizationId);
+        ConnectionTestResult result = testConnectionUseCase.execute(
+            new TestConnectionCommand(accountId, organizationId)
+        );
 
         TestConnectionResponse response = TestConnectionResponse.builder()
             .accountId(accountId)

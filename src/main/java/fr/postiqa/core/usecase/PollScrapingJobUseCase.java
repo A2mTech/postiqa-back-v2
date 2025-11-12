@@ -5,14 +5,18 @@ import fr.postiqa.core.domain.port.ScrapingPort;
 import fr.postiqa.core.domain.port.WebScrapingPort;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 /**
  * Use case for polling and managing async scraping jobs
  * <p>
  * Handles polling job status and retrieving results for ASYNC_NATIVE execution mode.
  */
-@Component
+@fr.postiqa.shared.annotation.UseCase(
+    value = "PollScrapingJob",
+    resourceType = "SCRAPING_JOB",
+    description = "Polls and retrieves status of async scraping jobs",
+    logActivity = false  // Read-only polling operation
+)
 public class PollScrapingJobUseCase {
 
     private static final Logger log = LoggerFactory.getLogger(PollScrapingJobUseCase.class);

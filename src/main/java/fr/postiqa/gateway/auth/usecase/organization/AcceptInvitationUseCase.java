@@ -3,32 +3,34 @@ package fr.postiqa.gateway.auth.usecase.organization;
 import fr.postiqa.database.entity.*;
 import fr.postiqa.database.repository.UserRepository;
 import fr.postiqa.database.repository.UserRoleRepository;
-import fr.postiqa.gateway.auth.service.ActivityLogService;
 import fr.postiqa.gateway.auth.service.InvitationService;
 import fr.postiqa.gateway.auth.service.OrganizationMemberService;
+import fr.postiqa.shared.annotation.UseCase;
 import fr.postiqa.shared.dto.auth.AcceptInvitationRequest;
 import fr.postiqa.shared.dto.auth.UserDto;
-import fr.postiqa.shared.exception.auth.UserAlreadyExistsException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.Optional;
 
 /**
  * Use case for accepting an organization invitation.
  */
-@Component
+@UseCase(
+    value = "AcceptInvitation",
+    resourceType = "MEMBER",
+    description = "Accepts an organization invitation and creates member"
+)
+@Service
 @RequiredArgsConstructor
 @Slf4j
-public class AcceptInvitationUseCase {
+public class AcceptInvitationUseCase implements fr.postiqa.shared.usecase.UseCase<AcceptInvitationRequest, UserDto> {
 
     private final InvitationService invitationService;
     private final OrganizationMemberService memberService;
-    private final ActivityLogService activityLogService;
     private final UserRepository userRepository;
     private final UserRoleRepository userRoleRepository;
     private final PasswordEncoder passwordEncoder;
@@ -90,23 +92,6 @@ public class AcceptInvitationUseCase {
 
         // Mark invitation as accepted
         invitationService.markAsAccepted(invitation.getId(), user.getId());
-
-        // Log activity
-        activityLogService.logActivity(
-            user.getId(),
-            invitation.getOrganization().getId(),
-            invitation.getClient() != null ? invitation.getClient().getId() : null,
-            "INVITATION_ACCEPTED",
-            "MEMBER",
-            member.getId(),
-            null,
-            null,
-            Map.of(
-                "invitationId", invitation.getId().toString(),
-                "role", invitation.getRole().getName(),
-                "isNewUser", isNewUser
-            )
-        );
 
         log.info("Invitation accepted by user: {} for organization: {}",
             user.getEmail(), invitation.getOrganization().getName());

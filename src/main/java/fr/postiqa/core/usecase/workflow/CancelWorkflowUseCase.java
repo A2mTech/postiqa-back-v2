@@ -11,6 +11,11 @@ import org.springframework.stereotype.Service;
  * Use case for cancelling a workflow execution.
  * Cancelled workflows cannot be resumed.
  */
+@fr.postiqa.shared.annotation.UseCase(
+    value = "CancelWorkflow",
+    resourceType = "WORKFLOW",
+    description = "Cancels a workflow execution permanently"
+)
 @Service
 @RequiredArgsConstructor
 @Slf4j

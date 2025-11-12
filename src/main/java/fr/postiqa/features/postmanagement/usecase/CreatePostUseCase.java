@@ -8,7 +8,7 @@ import fr.postiqa.features.postmanagement.domain.port.*;
 import fr.postiqa.features.postmanagement.domain.vo.ChannelId;
 import fr.postiqa.features.postmanagement.domain.vo.Content;
 import fr.postiqa.features.postmanagement.domain.vo.PostId;
-import org.springframework.stereotype.Component;
+import fr.postiqa.shared.annotation.UseCase;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -18,8 +18,12 @@ import java.util.List;
  * Use case for creating a new post.
  * Validates channels, creates post, and publishes event.
  */
-@Component
-public class CreatePostUseCase {
+@UseCase(
+    value = "CreatePost",
+    resourceType = "POST",
+    description = "Creates a new social media post"
+)
+public class CreatePostUseCase implements fr.postiqa.shared.usecase.UseCase<CreatePostUseCase.CreatePostCommand, PostId> {
 
     private final PostRepositoryPort postRepository;
     private final ChannelRepositoryPort channelRepository;

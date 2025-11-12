@@ -3,10 +3,11 @@ package fr.postiqa.gateway.auth.usecase.organization;
 import fr.postiqa.database.entity.OrganizationMemberEntity;
 import fr.postiqa.database.repository.UserRoleRepository;
 import fr.postiqa.gateway.auth.service.OrganizationMemberService;
+import fr.postiqa.shared.annotation.UseCase;
 import fr.postiqa.shared.dto.auth.OrganizationHierarchyDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -15,10 +16,16 @@ import java.util.stream.Collectors;
 /**
  * Use case for getting organization hierarchy tree.
  */
-@Component
+@UseCase(
+    value = "GetOrganizationHierarchy",
+    resourceType = "ORGANIZATION",
+    description = "Retrieves the organization hierarchy tree",
+    logActivity = false
+)
+@Service
 @RequiredArgsConstructor
 @Slf4j
-public class GetOrganizationHierarchyUseCase {
+public class GetOrganizationHierarchyUseCase implements fr.postiqa.shared.usecase.UseCase<UUID, List<OrganizationHierarchyDto>> {
 
     private final OrganizationMemberService memberService;
     private final UserRoleRepository userRoleRepository;

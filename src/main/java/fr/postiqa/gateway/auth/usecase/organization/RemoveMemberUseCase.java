@@ -3,33 +3,39 @@ package fr.postiqa.gateway.auth.usecase.organization;
 import fr.postiqa.database.entity.OrganizationMemberEntity;
 import fr.postiqa.database.repository.OrganizationMemberRepository;
 import fr.postiqa.database.repository.UserRoleRepository;
-import fr.postiqa.gateway.auth.service.ActivityLogService;
 import fr.postiqa.gateway.auth.service.OrganizationMemberService;
+import fr.postiqa.shared.annotation.UseCase;
 import fr.postiqa.shared.exception.auth.CannotModifySelfException;
 import fr.postiqa.shared.exception.auth.MemberNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
 import java.util.UUID;
 
 /**
  * Use case for removing a member from an organization.
  */
-@Component
+@UseCase(
+    value = "RemoveMember",
+    resourceType = "MEMBER",
+    description = "Removes a member from the organization"
+)
+@Service
 @RequiredArgsConstructor
 @Slf4j
-public class RemoveMemberUseCase {
+public class RemoveMemberUseCase implements fr.postiqa.shared.usecase.UseCase<UUID, Void> {
 
     private final OrganizationMemberService memberService;
     private final OrganizationMemberRepository memberRepository;
     private final UserRoleRepository userRoleRepository;
-    private final ActivityLogService activityLogService;
 
     @Transactional
-    public void execute(UUID memberId, UUID removedByUserId, UUID organizationId) {
+    public Void execute(UUID memberId) {
+        // Get context from tenant holder
+        UUID removedByUserId = fr.postiqa.gateway.auth.authorization.TenantContextHolder.getUserId();
+        UUID organizationId = fr.postiqa.gateway.auth.authorization.TenantContextHolder.getOrganizationId();
         OrganizationMemberEntity member = memberRepository.findById(memberId)
             .orElseThrow(() -> new MemberNotFoundException("Member not found"));
 
@@ -53,23 +59,9 @@ public class RemoveMemberUseCase {
         );
         userRoleRepository.deleteAll(userRoles);
 
-        // Log activity
-        activityLogService.logActivity(
-            removedByUserId,
-            organizationId,
-            null,
-            "MEMBER_REMOVED",
-            "MEMBER",
-            memberId,
-            null,
-            null,
-            Map.of(
-                "removedUserEmail", member.getUser().getEmail(),
-                "removedUserId", member.getUser().getId().toString()
-            )
-        );
-
         log.info("Member {} removed from organization {} by user {}",
             member.getUser().getEmail(), organizationId, removedByUserId);
+
+        return null;
     }
 }

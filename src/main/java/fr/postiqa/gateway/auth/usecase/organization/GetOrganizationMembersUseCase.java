@@ -1,15 +1,15 @@
 package fr.postiqa.gateway.auth.usecase.organization;
 
 import fr.postiqa.database.entity.OrganizationMemberEntity;
-import fr.postiqa.database.entity.PermissionEntity;
 import fr.postiqa.database.entity.UserRoleEntity;
 import fr.postiqa.database.repository.UserPermissionOverrideRepository;
 import fr.postiqa.database.repository.UserRoleRepository;
 import fr.postiqa.gateway.auth.service.OrganizationMemberService;
+import fr.postiqa.shared.annotation.UseCase;
 import fr.postiqa.shared.dto.auth.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -19,10 +19,16 @@ import java.util.stream.Collectors;
 /**
  * Use case for getting all members of an organization.
  */
-@Component
+@UseCase(
+    value = "GetOrganizationMembers",
+    resourceType = "MEMBER",
+    description = "Retrieves all members of an organization",
+    logActivity = false
+)
+@Service
 @RequiredArgsConstructor
 @Slf4j
-public class GetOrganizationMembersUseCase {
+public class GetOrganizationMembersUseCase implements fr.postiqa.shared.usecase.UseCase<UUID, List<OrganizationMemberDto>> {
 
     private final OrganizationMemberService memberService;
     private final UserRoleRepository userRoleRepository;

@@ -17,6 +17,11 @@ import java.util.concurrent.CompletableFuture;
  * Use case for starting a new workflow execution.
  * Creates a workflow instance, persists it, and delegates execution to the engine.
  */
+@fr.postiqa.shared.annotation.UseCase(
+    value = "StartWorkflow",
+    resourceType = "WORKFLOW",
+    description = "Initializes and starts a workflow execution"
+)
 @Service
 @RequiredArgsConstructor
 @Slf4j

@@ -16,6 +16,11 @@ import java.util.concurrent.CompletableFuture;
  * Use case for resuming a paused workflow.
  * Continues execution from the last completed step.
  */
+@fr.postiqa.shared.annotation.UseCase(
+    value = "ResumeWorkflow",
+    resourceType = "WORKFLOW",
+    description = "Resumes a paused workflow execution"
+)
 @Service
 @RequiredArgsConstructor
 @Slf4j

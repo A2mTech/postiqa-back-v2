@@ -17,6 +17,8 @@ import java.util.UUID;
 @AllArgsConstructor
 public class UpdateMemberRoleRequest {
 
+    private UUID memberId;
+
     @NotNull(message = "Role ID is required")
     private UUID roleId;
 

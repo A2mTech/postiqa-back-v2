@@ -1,246 +1,428 @@
-# Architecture Postiqa - Vue d'ensemble
+# Architecture Documentation
 
-## Structure Modulaire (Spring Modulith)
+## Overview
 
-```
-fr.postiqa/
-│
-├── 📦 SHARED MODULES (accessibles par tous)
-│   ├── shared/                       # DTOs, exceptions, utils, annotations
-│   └── database/                     # Entities JPA + Repositories Spring Data
-│
-├── 🔐 GATEWAY MODULE
-│   └── gateway/                      # Spring Security, Auth, Filtres
-│
-├── 🎯 CORE MODULE (Clean Architecture)
-│   └── core/
-│       ├── domain/
-│       │   ├── model/                # Entities métier, Value Objects
-│       │   └── port/                 # ScrapingPort, AnalysisPort (interfaces)
-│       ├── usecase/                  # AnalyzeUserProfileUseCase
-│       ├── adapter/
-│       │   ├── in/                   # Exposer use cases
-│       │   └── out/                  # Implémenter ports
-│       └── infrastructure/
-│           ├── client/               # Apify, Bright Data, OpenAI clients
-│           └── config/               # Configurations
-│
-├── 🎨 FEATURES MODULES
-│   │
-│   ├── features.contentgeneration/   # Clean Architecture
-│   │   ├── domain/
-│   │   │   ├── model/
-│   │   │   └── port/                 # GenerationPort, LearningPort
-│   │   ├── usecase/                  # GeneratePostUseCase, LearnFromEditUseCase
-│   │   ├── adapter/
-│   │   │   ├── in/
-│   │   │   └── out/
-│   │   └── infrastructure/
-│   │
-│   ├── features.editorialcalendar/   # Clean Architecture
-│   │   ├── domain/
-│   │   │   ├── model/
-│   │   │   └── port/                 # StrategyPort
-│   │   ├── usecase/                  # GenerateStrategyUseCase
-│   │   ├── adapter/
-│   │   │   ├── in/
-│   │   │   └── out/
-│   │   └── infrastructure/
-│   │
-│   ├── features.publishing/          # Spring Classique
-│   │   ├── service/                  # PublishingService
-│   │   └── scheduler/                # ScheduledPublisher
-│   │
-│   ├── features.weeklybrief/         # Spring Classique
-│   │   ├── service/                  # BriefService
-│   │   ├── transcription/            # WhisperClient
-│   │   └── extraction/               # EventExtractor
-│   │
-│   └── features.analytics/           # Spring Classique
-│       ├── service/                  # AnalyticsService
-│       └── metrics/                  # MetricsCalculator
-│
-└── 🌐 API REST MODULES
-    ├── business/                     # /api/business/*
-    │   ├── controller/               # REST controllers (orchestration)
-    │   └── config/
-    │
-    └── agency/                       # /api/agency/*
-        ├── controller/               # REST controllers (orchestration)
-        ├── config/
-        └── tenant/                   # Multi-tenant logic
+Postiqa Back v2 is a **package-based modular monolith** built with Spring Modulith. The architecture combines Clean Architecture for complex business logic with Spring Classic for simpler features, enforcing strict module boundaries through compile-time and runtime validation.
+
+## Architectural Principles
+
+### Modular Monolith (Spring Modulith)
+
+- **Single Gradle module** with logical separation via packages under `fr.postiqa`
+- **Module boundary enforcement** via Spring Modulith validation
+- **Event-driven communication** between modules (no direct dependencies)
+- **Shared modules** accessible by all: `shared`, `database`
+
+### Clean Architecture
+
+Applied to modules with complex business logic:
+- **Domain layer**: Entities, value objects, domain ports (no framework dependencies)
+- **Use case layer**: Business logic orchestration (framework-agnostic)
+- **Adapter layer**: Inbound (controllers) and outbound (gateways) adapters
+- **Infrastructure layer**: External clients, configurations, framework integrations
+
+**Dependency Rule**: domain ← usecase ← adapter ← infrastructure
+
+## Module Structure
+
+### 1. Foundation Modules
+
+#### `shared` - Shared Components
+**Purpose**: Cross-cutting concerns accessible by all modules
+
+**Contents**:
+- **DTOs** (45 classes): LoginRequest/Response, PostDto, SocialAccountDto
+- **Exceptions** (25 classes): UserNotFoundException, InvalidCredentialsException
+- **Annotations**: `@UseCase`, `@LogActivity`, `@RequirePermission`, `@TenantScoped`
+- **Enums**: SocialPlatform, PostStatus, PostType, MediaType
+- **Use Case Infrastructure**: Base interfaces, AOP handler (UseCaseHandler)
+
+**Key Components**:
+```java
+@UseCase(
+    resourceType = "POST",
+    description = "Creates social media post"
+)
+public class CreatePostUseCase {
+    // Automatic activity logging via AOP
+}
 ```
 
-## Flux de Dépendances
+#### `database` - Persistence Layer
+**Purpose**: JPA entities and Spring Data repositories (NO business logic)
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    API REST LAYER                       │
-│  ┌──────────────┐              ┌──────────────┐        │
-│  │   business   │              │    agency    │        │
-│  └──────┬───────┘              └──────┬───────┘        │
-│         │                              │                │
-└─────────┼──────────────────────────────┼────────────────┘
-          │                              │
-          ▼                              ▼
-┌─────────────────────────────────────────────────────────┐
-│                    FEATURES LAYER                       │
-│  ┌────────────┐ ┌────────────┐ ┌──────────────────┐   │
-│  │  content   │ │ editorial  │ │  publishing       │   │
-│  │ generation │ │  calendar  │ │  weeklybrief      │   │
-│  │            │ │            │ │  analytics        │   │
-│  └─────┬──────┘ └─────┬──────┘ └────────┬─────────┘   │
-└────────┼──────────────┼──────────────────┼─────────────┘
-         │              │                  │
-         ▼              ▼                  ▼
-    ┌────────────────────────────────────────┐
-    │          CORE MODULE                   │
-    │    (Scraping + Analysis)               │
-    └────────────────┬───────────────────────┘
-                     │
-                     ▼
-    ┌────────────────────────────────────────┐
-    │      SHARED MODULES LAYER              │
-    │  ┌──────────┐        ┌──────────┐     │
-    │  │ database │        │  shared  │     │
-    │  └──────────┘        └──────────┘     │
-    └────────────────────────────────────────┘
-                     ▲
-                     │
-    ┌────────────────┴───────────────────────┐
-    │         GATEWAY MODULE                 │
-    │      (Security, Auth, Filters)         │
-    └────────────────────────────────────────┘
-```
+**22 Entities**:
+- Auth: UserEntity, RoleEntity, PermissionEntity, ApiKeyEntity
+- Organization: OrganizationEntity, ClientEntity, OrganizationMemberEntity
+- Social: SocialAccountEntity, PostEntity, MediaEntity
+- Workflow: WorkflowInstanceEntity, WorkflowStepExecutionEntity
 
-## Règles Architecturales
+**Repository Pattern**: Spring Data JPA with derived queries and JPQL
 
-### ✅ AUTORISÉ
+**Design Rule**: Entities are pure data models. Business logic belongs in domain/usecase layers.
 
-1. **Features → Core** : Les features peuvent utiliser le core
-2. **Tous → Shared/Database** : Tous les modules peuvent utiliser shared et database
-3. **API → Features** : Les API REST orchestrent les features
-4. **Events inter-modules** : Communication via Spring Modulith events
+#### `gateway` - Security & Auth
+**Purpose**: Authentication, authorization, organization management
 
-### ❌ INTERDIT
+**Architecture**: Use case-driven (17 use cases)
 
-1. **Features → Features** : Aucune feature ne peut dépendre d'une autre feature
-2. **Core → Features** : Le core ne connaît pas les features
-3. **Database → Tout** : Le module database n'importe rien (sauf shared)
-4. **Logique métier dans API** : Les modules business/agency sont purement orchestration
+**Key Use Cases**:
+- Auth: LoginUseCase, RefreshTokenUseCase, ValidateTokenUseCase
+- Organization: InviteMemberUseCase, UpdateMemberRoleUseCase, GrantPermissionOverrideUseCase
 
-## Clean Architecture (core, contentgeneration, editorialcalendar)
+**Authentication Mechanisms**:
+1. **JWT**: Stateless tokens with custom claims (user_id, organization_id, client_id)
+2. **API Key**: Header-based authentication (`X-API-Key`)
+3. **OAuth2**: Social login (Google, GitHub, LinkedIn)
 
-```
-┌────────────────────────────────────────────────────┐
-│                  INFRASTRUCTURE                    │
-│  ┌──────────────────────────────────────────────┐ │
-│  │ Clients API (Apify, OpenAI, Whisper, etc.)  │ │
-│  └──────────────────────────────────────────────┘ │
-└────────────┬───────────────────────────────────────┘
-             │ implements
-             ▼
-┌────────────────────────────────────────────────────┐
-│                    ADAPTER                         │
-│  ┌────────────┐              ┌────────────┐       │
-│  │ Adapter IN │              │ Adapter OUT│       │
-│  │ (expose    │              │ (implement │       │
-│  │ use cases) │              │   ports)   │       │
-│  └────────────┘              └────────────┘       │
-└────────────┬───────────────────────────────────────┘
-             │ uses
-             ▼
-┌────────────────────────────────────────────────────┐
-│                    USE CASE                        │
-│  ┌──────────────────────────────────────────────┐ │
-│  │ Business Logic (orchestration)               │ │
-│  └──────────────────────────────────────────────┘ │
-└────────────┬───────────────────────────────────────┘
-             │ uses
-             ▼
-┌────────────────────────────────────────────────────┐
-│                     DOMAIN                         │
-│  ┌────────────┐              ┌────────────┐       │
-│  │   Model    │              │   Ports    │       │
-│  │ (entities, │              │(interfaces)│       │
-│  │   VOs)     │              │            │       │
-│  └────────────┘              └────────────┘       │
-│                                                    │
-│  ⚠️  NO DEPENDENCIES - Pure Java                  │
-└────────────────────────────────────────────────────┘
-```
+**Authorization Model**:
+- RBAC with role-permission mapping
+- Resource-action permissions (`POST:CREATE`, `POST:*`)
+- Permission overrides per user
+- Multi-tenant scope validation
 
-## Orchestration d'APIs Externes
+**Filter Chain**: ApiKeyFilter → JwtFilter → TenantResolutionFilter
 
-**PRINCIPE CLÉ** : Ce projet n'implémente PAS de scraping custom ni d'IA custom.
+### 2. Core Module - Scraping & AI Orchestration
 
-### APIs Externes Utilisées
+**Architecture**: Full Clean Architecture
 
-| Fonctionnalité | Service Externe | Package |
-|----------------|-----------------|---------|
-| Scraping LinkedIn/Twitter/Instagram | **Apify** ou **Bright Data** | `core/infrastructure/client/` |
-| Analyse IA / Génération | **OpenAI** ou **Anthropic** | `*/infrastructure/client/` |
-| Transcription audio | **Whisper API** | `weeklybrief/transcription/` |
-| Extraction PDF carrousels | Bibliothèque PDF | `core/infrastructure/` |
+**Responsibility**: Orchestrate external APIs for scraping and AI analysis, manage workflow execution
 
-### Exemple d'Implémentation
+#### Domain Layer (`core/domain`)
+
+**Models**:
+- SocialPost, SocialProfile, WebsiteContent
+- WritingStyleAnalysis, ContentThemesAnalysis
+- WorkflowDefinition, WorkflowInstance, WorkflowStep
+
+**Ports** (15 interfaces):
+- ScrapingPort, WebScrapingPort, AnalysisPort
+- WorkflowExecutionPort, WorkflowPersistencePort, WorkflowEventPort
+
+**Enums**: SocialPlatform, ContentType, AnalysisType, WorkflowStatus, StepStatus, ExecutionMode
+
+#### Use Case Layer (`core/usecase`)
+
+**Scraping Use Cases** (5):
+- `GetSocialPostsUseCase`: Fetch posts (sync/async/native modes)
+- `GetSocialProfileUseCase`: Fetch user profiles
+- `GetWebsiteDataUseCase`: Scrape website content
+- `PollScrapingJobUseCase`: Monitor async job status
+- `AnalyzeUserProfileUseCase`: Multi-platform scraping + AI analysis
+
+**Workflow Use Cases** (7):
+- `StartWorkflowUseCase`: Initialize workflow execution
+- `ExecuteWorkflowStepUseCase`: Execute individual steps
+- `GetWorkflowStatusUseCase`: Monitor progress
+- `PauseWorkflowUseCase`, `ResumeWorkflowUseCase`, `CancelWorkflowUseCase`
+- `CompensateWorkflowUseCase`: Rollback failed workflows
+
+#### Adapter Layer (`core/adapter`)
+
+**Inbound**: CoreFacade (public API)
+**Outbound**: ApifyScrapingGateway, OpenAIAnalysisGateway, InMemoryCacheAdapter, JpaWorkflowPersistenceAdapter
+
+#### Infrastructure Layer (`core/infrastructure`)
+
+**Clients**:
+- `ApifyClient`: REST client for Apify API
+- `OpenAIAnalysisProvider`: OpenAI integration with strategy pattern
+
+**Actor System**: Platform-specific scraping configurations
+- ActorRegistry, ActorConfig, ActorInputBuilder, ActorOutputParser
+- Implementations: LinkedInActor, InstagramActor, TikTokActor
+
+**Analysis Framework**:
+- AnalysisStrategy pattern (4 types: writing style, content themes, image, multimodal)
+- PromptBuilder for context-aware templates
+- AnalysisProviderRegistry for multi-provider support
+
+**Workflow Engine**:
+- `WorkflowEngine`: DAG-based orchestration
+- `DependencyResolver`: Topological sort for execution order
+- `ParallelExecutionCoordinator`: Concurrent step execution
+- `RetryHandler`, `TimeoutHandler`, `CompensationHandler`
+
+**Workflow Features**:
+- Sequential/parallel execution modes
+- Retry policies with exponential backoff
+- Step-level timeouts
+- Compensation strategies: ALL, CRITICAL_ONLY, BEST_EFFORT
+- Context-based input/output chaining
+
+### 3. Feature Modules
+
+#### `features.postmanagement` - Post Lifecycle Management
+
+**Architecture**: Full Clean Architecture
+
+**Domain Models**:
+- Post (aggregate root)
+- Channel, Media (entities)
+- PostId, ChannelId, Content (value objects)
+
+**11 Use Cases**:
+- CRUD: CreatePostUseCase, UpdatePostUseCase, DeletePostUseCase, GetPostUseCase, ListPostsUseCase
+- Scheduling: SchedulePostUseCase, CancelScheduleUseCase
+- Media: UploadMediaUseCase, DeleteMediaUseCase
+- Channels: GetChannelUseCase, ListChannelsUseCase
+
+**Events Published**:
+- PostCreatedEvent, PostScheduledEvent, PostScheduleCancelledEvent
+- PostPublishedEvent, PostPublishFailedEvent, PostDeletedEvent
+
+**Adapter**: SpringPostEventAdapter (publishes events via ApplicationEventPublisher)
+
+#### `features.socialaccounts` - Social Platform Connectivity
+
+**Architecture**: Full Clean Architecture
+
+**Domain Models**:
+- SocialAccount (aggregate root)
+- OAuth2Token (value object)
+- Platform metadata (JSONB in database)
+
+**7 Use Cases**:
+- OAuth2: GenerateAuthorizationUrlUseCase, ConnectSocialAccountUseCase
+- Management: ListSocialAccountsUseCase, GetSocialAccountUseCase, DisconnectSocialAccountUseCase
+- Token: RefreshTokenUseCase (hourly scheduler), TestConnectionUseCase
+
+**Supported Platforms**: LinkedIn, Twitter, Instagram, YouTube, TikTok
+
+**Token Refresh**: Automatic hourly check via @Scheduled job
+
+#### Planned Features (Not Implemented)
+
+**`features.contentgeneration`**: Directory structure exists, no code
+**`features.editorialcalendar`**: Directory structure exists, no code
+**`features.publishing`**: Empty directories only
+**`features.weeklybrief`**: Empty directories only
+**`features.analytics`**: Empty directories only
+
+### 4. API REST Modules
+
+#### `business` - Business API
+
+**Endpoints**: `/api/business/*`
+
+**Target Audience**: Businesses managing their own social media
+
+**Architecture**: Thin orchestration layer (NO business logic)
+
+**Controllers**:
+- BusinessOrganizationController: Member/role/permission management
+- BusinessSocialAccountController: OAuth2 flow orchestration
+- PostController: Post CRUD and scheduling
+- ChannelController: Read-only channel access
+- MediaController: File upload handling
+
+**Pattern**: Controllers inject feature use cases directly, convert DTOs, delegate execution
+
+**Security**: Single organization scope extracted from `@AuthenticationPrincipal CustomUserDetails`
+
+#### `agency` - Agency API
+
+**Endpoints**: `/api/agency/clients/{clientId}/*`
+
+**Target Audience**: Agencies managing multiple client accounts
+
+**Architecture**: Thin orchestration with multi-tenant isolation
+
+**Key Differences vs Business**:
+- Client ID required in all endpoints
+- Client-scoped operations with scope validation
+- Cross-client views (agency-wide social accounts)
+- Client access delegation for agency users
+
+**Multi-Tenancy**:
+- User scopes include `clientId` for agency users
+- Scope validation in every controller method
+- Activity logs filterable by client
+- Member invitations support client-scoped roles
+
+## Module Communication
+
+### Event-Driven Architecture
+
+**Spring Modulith Events** via `ApplicationEventPublisher`:
 
 ```java
-// ❌ INTERDIT - Scraping custom
-public class CustomLinkedInScraper { ... }
+// Feature publishes event
+events.publishEvent(new PostCreatedEvent(postId, organizationId));
 
-// ✅ AUTORISÉ - Client API Apify
-@Component
-public class ApifyScrapingGateway implements ScrapingPort {
-    private final RestTemplate apifyClient;
-
-    @Override
-    public List<ScrapedPost> scrapeUserPosts(Platform platform, String userId) {
-        // Appel API Apify
-        return apifyClient.postForObject(...);
-    }
+// Other module listens
+@ApplicationModuleListener
+void on(PostCreatedEvent event) {
+    // React to event
 }
 ```
 
-## Communication Inter-Modules (Events)
+**Benefits**:
+- No direct dependencies between features
+- Loose coupling
+- Temporal decoupling (async event processing)
+- Event persistence support
+
+### Shared Data Access
+
+Features access `database` module directly:
+- Import repositories from `database.repository`
+- NO direct access to other feature internals
+- Shared DTOs via `shared.dto`
+
+## Cross-Cutting Concerns
+
+### Activity Logging
+
+**@UseCase Annotation**: Automatic AOP-based logging
 
 ```java
-// Module A publie un événement
-@Service
-public class SomeService {
-    private final ApplicationEventPublisher events;
-
-    public void doSomething() {
-        events.publishEvent(new UserProfileAnalyzedEvent(userId, profile));
-    }
-}
-
-// Module B écoute l'événement
-@Component
-public class SomeOtherService {
-
-    @ApplicationModuleListener
-    void on(UserProfileAnalyzedEvent event) {
-        // Réagir à l'événement
-    }
-}
+@UseCase(
+    resourceType = "POST",
+    description = "Creates post",
+    logActivity = true
+)
 ```
 
-## Validation Architecturale
+**Logged Information**:
+- User ID, organization ID, client ID
+- Resource type and ID
+- Action timestamp
+- HTTP request context (IP, user agent)
+- Performance metrics
 
-Le projet inclut `ModularityTests` qui vérifie automatiquement :
+### Multi-Tenancy
 
-- ✅ Respect des frontières entre modules
-- ✅ Pas de cycles de dépendances
-- ✅ Dépendances conformes au graphe
+**Tenant Context**: Thread-local storage via TenantContextHolder
 
-**À exécuter AVANT chaque commit** :
-```bash
-./gradlew test --tests "fr.postiqa.ModularityTests.verifyModularity"
+**Scope Validation**: Gateway validates JWT claims against requested resources
+
+**Database Isolation**: Queries filtered by organization_id/client_id
+
+### Error Handling
+
+**Custom Exceptions** (shared module):
+- Auth: UserNotFoundException, InvalidCredentialsException, TokenExpiredException
+- Social: SocialAccountNotFoundException, OAuth2AuthenticationException
+- Resources: ResourceNotFoundException, InsufficientPermissionsException
+
+**Global Exception Handler**: Converts exceptions to standardized API responses
+
+## Design Patterns
+
+### Domain-Driven Design
+- Aggregates: Post, SocialAccount, WorkflowInstance
+- Value Objects: PostId, Content, OAuth2Token
+- Domain Events: PostCreatedEvent, UserProfileAnalyzedEvent
+
+### Ports & Adapters (Hexagonal)
+- 15 port interfaces in domain layers
+- Infrastructure adapters implement ports
+- Dependency inversion (domain owns interfaces)
+
+### Strategy Pattern
+- Analysis strategies (writing style, content themes, image)
+- Compensation strategies (ALL, CRITICAL_ONLY, BEST_EFFORT)
+- Execution modes (sync, async thread, async native)
+
+### Repository Pattern
+- Spring Data repositories abstract persistence
+- Domain uses repository interfaces
+- Infrastructure provides JPA implementations
+
+### Facade Pattern
+- CoreFacade exposes public API of core module
+- Hides internal complexity from other modules
+
+## Module Dependency Graph
+
+```
+┌─────────────────────────────────────────────┐
+│           business / agency                 │ API REST Modules
+│        (Thin Orchestration)                 │
+└──────────────┬──────────────────────────────┘
+               │ calls use cases
+               ▼
+┌──────────────────────────────────────────────┐
+│  features.postmanagement                     │
+│  features.socialaccounts                     │ Feature Modules
+│  (+ planned: contentgen, editorial, etc.)    │
+└──────────────┬───────────────────────────────┘
+               │ may use core for scraping
+               ▼
+┌──────────────────────────────────────────────┐
+│            core                              │ Core Module
+│  (Scraping, AI, Workflow Engine)             │
+└──────────────┬───────────────────────────────┘
+               │
+               ▼
+┌──────────────────────────────────────────────┐
+│          database                            │ Persistence
+│    (JPA Entities, Repositories)              │
+└──────────────────────────────────────────────┘
+
+Cross-cutting: shared (accessible by all)
+              gateway (security filter chain)
 ```
 
----
+## Module Boundary Validation
 
-**Date de création** : 2025-11-06
-**Architecture** : Spring Modulith - Monolithe Modulaire Package-Based
-**Style** : Clean Architecture (modules complexes) + Spring Classique (modules simples)
+**Spring Modulith Validation**: Enforced at compile-time and runtime
+
+**ModularityTests** (MUST pass before commit):
+- `verifyModularity()`: Validates no unauthorized cross-module imports
+- `verifyNoCycles()`: Detects circular dependencies
+- `generateModularityDocumentation()`: Creates PlantUML diagrams
+
+**Shared Modules Declaration**:
+```java
+@Modulith(sharedModules = {"shared", "database"})
+```
+
+## Architectural Decisions
+
+### Why Clean Architecture for Some Features?
+- **postmanagement**: Complex domain logic, cross-platform publishing
+- **socialaccounts**: OAuth2 flows, token lifecycle management
+- **core**: External API orchestration with resilience patterns
+
+### Why Spring Classic for Others?
+- Simple CRUD operations without complex business rules
+- Scheduler-based tasks (publishing, analytics)
+- Planned but not yet implemented (publishing, weeklybrief, analytics)
+
+### Why Modular Monolith?
+- Team velocity: Deploy as single artifact
+- Module boundaries prevent big ball of mud
+- Easy refactoring: Move to microservices if needed
+- Spring Modulith provides governance without distribution costs
+
+### Why Event-Driven Communication?
+- Loose coupling between features
+- Prevents feature-to-feature dependencies
+- Supports future async processing
+- Audit trail of domain events
+
+## Future Architectural Considerations
+
+### Migration Path to Microservices
+If scaling requires distribution:
+1. Each feature is already a bounded context
+2. Spring Modulith events → message broker (Kafka, RabbitMQ)
+3. Extract modules to separate deployables
+4. API gateway routes to services
+
+### Planned Features Implementation
+When implementing `contentgeneration`, `editorialcalendar`:
+- Follow Clean Architecture pattern (already scaffolded)
+- Define domain models and ports
+- Implement use cases with `@UseCase` annotation
+- Publish domain events for inter-feature communication
+- NO direct dependencies on other features
+
+### Performance Optimization
+- Implement caching at use case level
+- Optimize N+1 queries with JOIN FETCH
+- Consider read models for complex queries (CQRS)
+- Async processing for long-running workflows

@@ -11,6 +11,11 @@ import org.springframework.stereotype.Service;
  * Use case for pausing a running workflow.
  * Workflow can be resumed later from the same state.
  */
+@fr.postiqa.shared.annotation.UseCase(
+    value = "PauseWorkflow",
+    resourceType = "WORKFLOW",
+    description = "Pauses a running workflow execution"
+)
 @Service
 @RequiredArgsConstructor
 @Slf4j

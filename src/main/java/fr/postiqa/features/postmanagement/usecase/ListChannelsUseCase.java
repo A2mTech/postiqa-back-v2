@@ -3,8 +3,8 @@ package fr.postiqa.features.postmanagement.usecase;
 import fr.postiqa.features.postmanagement.domain.model.Channel;
 import fr.postiqa.features.postmanagement.domain.port.ChannelRepositoryPort;
 import fr.postiqa.features.postmanagement.domain.port.TenantAccessPort;
+import fr.postiqa.shared.annotation.UseCase;
 import fr.postiqa.shared.enums.SocialPlatform;
-import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -12,8 +12,13 @@ import java.util.List;
 /**
  * Use case for listing channels with optional filters.
  */
-@Component
-public class ListChannelsUseCase {
+@UseCase(
+    value = "ListChannels",
+    resourceType = "CHANNEL",
+    description = "Lists channels with optional filters",
+    logActivity = false
+)
+public class ListChannelsUseCase implements fr.postiqa.shared.usecase.UseCase<ListChannelsUseCase.ListChannelsQuery, List<Channel>> {
 
     private final ChannelRepositoryPort channelRepository;
     private final TenantAccessPort tenantAccess;
